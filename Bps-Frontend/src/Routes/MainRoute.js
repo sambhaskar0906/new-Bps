@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from '../Pages/Admin/Dashboard';
 import Users from '../Pages/Admin/Users';
@@ -32,11 +32,23 @@ import ViewVehicle from '../Pages/Admin/Vehicle/Form/ViewVehicle';
 import EditVehicle from '../Pages/Admin/Vehicle/Form/EditVehicle';
 import ViewQuotation from '../Pages/Admin/Quotation/Form/ViewQuotation';
 import EditQuotations from '../Pages/Admin/Quotation/Form/EditQuotation';
+import TotalRevenue from '../Pages/Admin/Booking/TotalRevenue';
+import TotaLRevenue from '../Pages/Admin/Quotation/TotalRevenue';
 
 const MainRoute = () => {
-    const isAuthenticated = true; 
+    const isAuthenticated = localStorage.getItem("authToken") !== null;
 
-    return isAuthenticated ? (
+    useEffect(() => {
+        if (!isAuthenticated) {
+            window.location.href = "http://localhost:3000";
+        }
+    }, [isAuthenticated]);
+
+    if (!isAuthenticated) {
+        return null;
+    }
+
+    return (
         <DashboardLayout>
             <Routes>
                 <Route path="/" element={<Dashboard />} />
@@ -81,18 +93,18 @@ const MainRoute = () => {
                 <Route path='/booking/new' element={<BookingForm />} />
                 <Route path='/booking/:bookingId' element={<ViewBooking />} />
                 <Route path='/editbooking/:bookingId' element={<EditBooking />} />
+                <Route path='/totalrevenue' element={<TotalRevenue />} />
 
                 {/* Quotation routing */}
                 <Route path='/quotation' element={<QuotationCard />} />
                 <Route path='/quotationform' element={<QuotationForm />} />
                 <Route path="/viewquotation/:bookingId" element={<ViewQuotation />} />
                 <Route path="/updatequotation/:bookingId" element={<EditQuotations />} />
+                <Route path='/totalrevenu' element={<TotaLRevenue />} />
 
 
             </Routes>
         </DashboardLayout>
-    ) : (
-        <Navigate to="/login" />
     );
 };
 

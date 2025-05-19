@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import { useDispatch, useSelector } from 'react-redux';
-
+import { useNavigate } from 'react-router-dom'
 import { fetchBookingsByType } from '../../../features/booking/bookingSlice';
 import { fetchBookingRequest as fetchQuotationRequest } from '../../../features/quotation/quotationSlice';
 import { fetchavailableList } from '../../../features/Driver/driverSlice';
@@ -21,7 +21,6 @@ import { assignDeliveries } from '../../../features/delivery/deliverySlice';
 
 const DeliveryCard = () => {
     const dispatch = useDispatch();
-
     const { requestCount: bookingRequestCountValue, list: bookingList, loading: bookingLoading } = useSelector((state) => state.bookings);
     const { requestCount: quotationRequestCountValue, list: quotationList, loading: quotationLoading } = useSelector((state) => state.quotations);
     const { list: driverList = [] } = useSelector((state) => state.drivers);
@@ -59,24 +58,26 @@ const DeliveryCard = () => {
     };
 
     const handleAssign = () => {
-    const selectedVehicle = vehicleList.find((v) => v.vehicleId === vehicle);
-    const payload = {
-        bookingIds: selectedCard === 'booking' ? selectedItems.booking : [],
-        quotationIds: selectedCard === 'quotation' ? selectedItems.quotation : [],
-        driverName: driver,
-        vehicleModel: selectedVehicle?.vehicleModel || '',
-        device: device
-    };
+        const selectedVehicle = vehicleList.find((v) => v.vehicleId === vehicle);
+        const payload = {
+            bookingIds: selectedCard === 'booking' ? selectedItems.booking : [],
+            quotationIds: selectedCard === 'quotation' ? selectedItems.quotation : [],
+            driverName: driver,
+            vehicleModel: selectedVehicle?.vehicleModel || '',
+            device: device
+        };
 
-    dispatch(assignDeliveries(payload)).then((res) => {
-        if (res.type.includes('fulfilled')) {
-            setSelectedItems({ booking: [], quotation: [], final: [] });
-            setDriver('');
-            setVehicle('');
-            setDevice('');
-        }
-    });
-};
+        dispatch(assignDeliveries(payload)).then((res) => {
+            if (res.type.includes('fulfilled')) {
+                setSelectedItems({ booking: [], quotation: [], final: [] });
+                setDriver('');
+                setVehicle('');
+                setDevice('');
+                dispatch(fetchBookingsByType('request'));
+                dispatch(fetchQuotationRequest());
+            }
+        });
+    };
 
 
     const cards = [

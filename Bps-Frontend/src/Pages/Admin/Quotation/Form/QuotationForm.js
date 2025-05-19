@@ -23,6 +23,7 @@ import { fetchStates, fetchCities, clearCities } from '../../../../features/Loca
 import { createBooking } from "../../../../features/quotation/quotationSlice";
 import { fetchStations } from '../../../../features/stations/stationSlice'
 import CustomerSearch from "../../../../Components/CustomerSearch";
+import { Navigate, useNavigate } from "react-router-dom";
 const toPay = ['pay', 'paid', 'none'];
 
 const initialValues = {
@@ -69,7 +70,7 @@ const initialValues = {
 const QuotationForm = () => {
   const [senderCities, setSenderCities] = React.useState([]);
   const [receiverCities, setReceiverCities] = React.useState([]);
-
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { states, cities } = useSelector((state) => state.location);
   const { list: stations } = useSelector((state) => state.stations);
@@ -95,6 +96,7 @@ const QuotationForm = () => {
           try {
             await dispatch(createBooking(values)).unwrap();
             formikHelpers.resetForm();
+            navigate('/quotation')
           } catch (error) {
             console.log("Error while adding booking", error);
           }
@@ -206,23 +208,23 @@ const QuotationForm = () => {
                     </Grid>
                   </Grid>
 
-                 <CustomerSearch
-  onCustomerSelect={(customer) => {
-    if (customer) {
-      setFieldValue("firstName", customer.firstName || "");
-      setFieldValue("middleName", customer.middleName || "");
-      setFieldValue("lastName", customer.lastName || "");
-      setFieldValue("contactNumber", customer.contactNumber?.toString() || "");
-      setFieldValue("email", customer.emailId || "");
-    } else {
-      setFieldValue("firstName", "");
-      setFieldValue("middleName", "");
-      setFieldValue("lastName", "");
-      setFieldValue("contactNumber", "");
-      setFieldValue("email", "");
-    }
-  }}
-/>
+                  <CustomerSearch
+                    onCustomerSelect={(customer) => {
+                      if (customer) {
+                        setFieldValue("firstName", customer.firstName || "");
+                        setFieldValue("middleName", customer.middleName || "");
+                        setFieldValue("lastName", customer.lastName || "");
+                        setFieldValue("contactNumber", customer.contactNumber?.toString() || "");
+                        setFieldValue("email", customer.emailId || "");
+                      } else {
+                        setFieldValue("firstName", "");
+                        setFieldValue("middleName", "");
+                        setFieldValue("lastName", "");
+                        setFieldValue("contactNumber", "");
+                        setFieldValue("email", "");
+                      }
+                    }}
+                  />
 
 
                   <Grid size={{ xs: 12 }}>
@@ -441,7 +443,7 @@ const QuotationForm = () => {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       name="sTax"
-                      label="SGST %"
+                      label="sTax %"
                       value={values.sTax}
                       onChange={(e) => {
                         // Convert to number and ensure it's valid

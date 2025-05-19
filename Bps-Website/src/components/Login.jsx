@@ -1,32 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Card,
-    CardContent,
     Typography,
     TextField,
     InputAdornment,
     IconButton,
     Button,
+    CircularProgress,
+    Alert,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import loginImage from '../assets/BoxMan.svg'; // Make sure this path is correct
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser } from '../features/loginSlice';
+import { useNavigate } from 'react-router-dom';
+import loginImage from '../assets/BoxMan.svg';
 
 const Login = () => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({ emailId: '', password: '' });
 
-    const handleTogglePassword = () => {
-        setShowPassword(!showPassword);
-    };
+    const { isAuthenticated, loading, error } = useSelector((state) => state.auth);
+
+    // useEffect(() => {
+    //     if (isAuthenticated) {
+    //         navigate('/'); // redirect to homepage/dashboard
+    //     }
+    // }, [isAuthenticated, navigate]);
+
+    const handleTogglePassword = () => setShowPassword(!showPassword);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Login Data:', formData);
+        try {
+            const response = await dispatch(loginUser(formData)).unwrap();
+
+            // token ko URL me bhejo redirect karte waqt
+            window.location.href = `http://localhost:3000/?token=${response.token}`;
+        } catch (err) {
+            console.error('Login failed', err);
+        }
     };
 
     return (
@@ -50,7 +70,7 @@ const Login = () => {
                     overflow: 'hidden',
                 }}
             >
-                {/* Left side - Login Form */}
+                {/* Left - Form */}
                 <Box
                     sx={{
                         width: { xs: '100%', md: '50%' },
@@ -66,6 +86,9 @@ const Login = () => {
                     <Typography variant="subtitle1" gutterBottom align="center">
                         Log in to your account
                     </Typography>
+
+                    {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                    {loading && <CircularProgress sx={{ mb: 2, mx: 'auto' }} />}
 
                     <form onSubmit={handleSubmit}>
                         <TextField
@@ -100,6 +123,7 @@ const Login = () => {
                             type="submit"
                             variant="contained"
                             fullWidth
+                            disabled={loading}
                             sx={{
                                 mt: 3,
                                 py: 1.5,
@@ -117,7 +141,7 @@ const Login = () => {
                     </form>
                 </Box>
 
-                {/* Right side - Image */}
+                {/* Right - Image */}
                 <Box
                     sx={{
                         width: '50%',
@@ -126,18 +150,15 @@ const Login = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         p: 3,
-                        position: 'relative', // Required for absolute positioning inside
+                        position: 'relative',
                     }}
                 >
-                    {/* Image */}
                     <Box
                         component="img"
                         src={loginImage}
                         alt="Login Illustration"
                         sx={{ maxWidth: '100%', maxHeight: '100%' }}
                     />
-
-                    {/* Overlay Text */}
                     <Typography
                         variant="h6"
                         sx={{
@@ -147,14 +168,12 @@ const Login = () => {
                             transform: 'translate(-50%, -50%)',
                             fontWeight: 'bold',
                             color: '#fff',
-                            textAlign: 'center'
+                            textAlign: 'center',
                         }}
                     >
                         Bharat Parcel Services
                     </Typography>
                 </Box>
-
-
             </Card>
         </Box>
     );

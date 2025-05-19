@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -37,8 +37,8 @@ import {
   Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import AddIcon from "@mui/icons-material/Add";
-import {useDispatch,useSelector} from 'react-redux';
-import {bookingRequestCount,activeBookingCount,cancelledBookingCount,fetchBookingsByType} from '../../../features/booking/bookingSlice'
+import { useDispatch, useSelector } from 'react-redux';
+import { bookingRequestCount, activeBookingCount, cancelledBookingCount, fetchBookingsByType } from '../../../features/booking/bookingSlice'
 
 
 const createData = (id, orderby, date, namep, pickup, named, drop, contact) => ({
@@ -101,26 +101,27 @@ const BookingCard = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState(null);
   const dispatch = useDispatch();
-  const { list: bookingList, requestCount,activeDeliveriesCount, cancelledDeliveriesCount} = useSelector(state => state.bookings);
+  const { list: bookingList, requestCount, activeDeliveriesCount, cancelledDeliveriesCount } = useSelector(state => state.bookings);
   useEffect(() => {
-  if (bookingList && Array.isArray(bookingList)) {
-    setBookings(bookingList);
-  }
-}, [bookingList]);
+    if (bookingList && Array.isArray(bookingList)) {
+      setBookings(bookingList);
+    }
+  }, [bookingList]);
 
-  useEffect(()=>{
+  useEffect(() => {
     dispatch(fetchBookingsByType('request'));
     dispatch(bookingRequestCount());
     dispatch(activeBookingCount());
     dispatch(cancelledBookingCount());
-  },[dispatch])
+  }, [dispatch])
   const handleAdd = () => {
     navigate("/booking/new");
   };
 
-  const handleCardClick = (type) => {
-    
+  const handleCardClick = (type, route) => {
+
     dispatch(fetchBookingsByType(type));
+    navigate(route);
   };
 
   const handleRequestSort = (property) => {
@@ -141,12 +142,11 @@ const BookingCard = () => {
     setPage(0);
   };
 
-  const handleView = (bookingId) =>
-    {
-      console.log("Navigating to booking ID:", bookingId);
-      navigate(`/booking/${bookingId}`);
-    };
-   
+  const handleView = (bookingId) => {
+    console.log("Navigating to booking ID:", bookingId);
+    navigate(`/booking/${bookingId}`);
+  };
+
 
 
   const handleEdit = (bookingId) => {
@@ -179,44 +179,45 @@ const BookingCard = () => {
       (row.contact && row.contact.includes(searchTerm))
   );
   const cardData = [
-  {
-    id: 1,
-    title: "Booking",
-    value: requestCount,
-    subtitle: "Requests",
-    duration: "0% (30 Days)",
-    type :"request",
-    icon: <BookOnlineIcon fontSize="large" />,
-  },
-  {
-    id: 2,
-    title: "Active ",
-    value: activeDeliveriesCount,
-    subtitle: "Deliveries",
-    duration: "100% (30 Days)",
-    type:"active",
-    icon: <LocalShippingIcon fontSize="large" />,
-  },
-  {
-    id: 3,
-    title: "Total Cancelled",
-    value: cancelledDeliveriesCount,
-    duration: "0% (30 Days)",
-    type : "cancelled",
-    icon: <CancelScheduleSendIcon fontSize="large" />,
-  },
-  {
-    id: 4,
-    title: "0.00",
-    value: "Rs.",
-    subtitle: "Total Revenue",
-    duration: "100% (30 Days)",
-    icon: <AccountBalanceWalletIcon fontSize="large" />,
-  },
-];
+    {
+      id: 1,
+      title: "Booking",
+      value: requestCount,
+      subtitle: "Requests",
+      duration: "0% (30 Days)",
+      type: "request",
+      icon: <BookOnlineIcon fontSize="large" />,
+    },
+    {
+      id: 2,
+      title: "Active ",
+      value: activeDeliveriesCount,
+      subtitle: "Deliveries",
+      duration: "100% (30 Days)",
+      type: "active",
+      icon: <LocalShippingIcon fontSize="large" />,
+    },
+    {
+      id: 3,
+      title: "Total Cancelled",
+      value: cancelledDeliveriesCount,
+      duration: "0% (30 Days)",
+      type: "cancelled",
+      icon: <CancelScheduleSendIcon fontSize="large" />,
+    },
+    {
+      id: 4,
+      title: "0.00",
+      value: "Rs.",
+      subtitle: "Total Revenue",
+      duration: "100% (30 Days)",
+      route: "/totalrevenue",
+      icon: <AccountBalanceWalletIcon fontSize="large" />,
+    },
+  ];
 
   const emptyRows = Math.max(0, (1 + page) * rowsPerPage - filteredRows.length);
-console.log("data",bookingList);
+  console.log("data", bookingList);
   return (
     <Box sx={{ p: 2 }}>
       <Box
@@ -254,7 +255,7 @@ console.log("data",bookingList);
             sx={{ minWidth: 220, flex: 1, display: "flex", borderRadius: 2 }}
           >
             <Card
-              onClick={() =>  handleCardClick(card.type)}
+              onClick={() => handleCardClick(card.type, card.route)}
               sx={{
                 flex: 1,
                 cursor: "pointer",

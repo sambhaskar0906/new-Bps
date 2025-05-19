@@ -6,14 +6,14 @@ import Quotation from "../model/customerQuotation.model.js";
 import { Customer } from "../model/customer.model.js";
 import manageStation from "../model/manageStation.model.js";
 
- const formatQuotations = (quotations) => {
+const formatQuotations = (quotations) => {
   return quotations.map((q, index) => ({
     "S.No.": index + 1,
     "Booking ID": q.bookingId,
     "Date": q.quotationDate ? q.quotationDate.toISOString().split("T")[0] : "",
     "Name": q.customerId
-    ? `${q.customerId.firstName} ${q.customerId.lastName}`
-    : `${q.firstName || ""} ${q.lastName || ""}`.trim(),
+      ? `${q.customerId.firstName} ${q.customerId.lastName}`
+      : `${q.firstName || ""} ${q.lastName || ""}`.trim(),
     "Pick up": q.startStation?.stationName || q.startStationName || 'N/A',
     "": "",
     "Name (Drop)": q.toCustomerName || "",
@@ -29,7 +29,7 @@ import manageStation from "../model/manageStation.model.js";
 
 // Create Quotation Controller
 export const createQuotation = asyncHandler(async (req, res, next) => {
-  console.log("body",req.body);
+  console.log("body", req.body);
   const {
     firstName,
     lastName,
@@ -50,10 +50,8 @@ export const createQuotation = asyncHandler(async (req, res, next) => {
     toPincode,
     additionalCmt,
     sTax,
-    // sgst,
     amount,
-    // freight,
-    productDetails, // Expecting an array of products
+    productDetails,
     locality,
   } = req.body;
 
@@ -119,14 +117,12 @@ export const createQuotation = asyncHandler(async (req, res, next) => {
     toPincode,
     additionalCmt,
     sTax: Number(sTax),
-    // sgst: Number(sgst),
     amount: Number(amount),
-    // freight: Number(freight),
     productDetails,
   });
 
   await quotation.save();
-
+  await sendBookingEmail(customer.emailId, quotation);
   res
     .status(201)
     .json(new ApiResponse(201, quotation, "Quotation created successfully"));
@@ -141,8 +137,8 @@ export const getAllQuotations = asyncHandler(async (req, res) => {
   const quotations = await Quotation.find()
     .populate("startStation", "stationName")
     .populate("customerId", "firstName lastName");
-   console.log(quotations)
-    const formatted = formatQuotations(quotations);
+  console.log(quotations)
+  const formatted = formatQuotations(quotations);
 
 
   res.status(200).json(new ApiResponse(200, formatted));
@@ -163,9 +159,9 @@ export const getQuotationById = asyncHandler(async (req, res, next) => {
 export const updateQuotation = asyncHandler(async (req, res, next) => {
   const { bookingId } = req.params;
   const updatedData = req.body;
-  console.log("📝 Update request body:", updatedData);
-  const updatedQuotation = await Quotation.findOneAndUpdate({bookingId},updatedData,{new:true});
-  
+
+  const updatedQuotation = await Quotation.findOneAndUpdate({ bookingId }, updatedData, { new: true });
+
   if (!updatedQuotation) return next(new ApiError(404, "Quotation not found"));
 
   res.status(200).json(new ApiResponse(200, updatedQuotation, "Quotation updated successfully"));
@@ -174,7 +170,7 @@ export const updateQuotation = asyncHandler(async (req, res, next) => {
 // Delete Quotation Controller
 export const deleteQuotation = asyncHandler(async (req, res, next) => {
   const { bookingId } = req.params;
-  
+
   const deletedQuotation = await Quotation.findOneAndDelete({ bookingId });
 
   if (!deletedQuotation) {
@@ -189,8 +185,10 @@ export const deleteQuotation = asyncHandler(async (req, res, next) => {
 
 // Get Total Booking Requests Controller
 export const getTotalBookingRequests = asyncHandler(async (req, res) => {
-  const total = await Quotation.countDocuments({activeDelivery: false, 
-    totalCancelled: 0 }); 
+  const total = await Quotation.countDocuments({
+    activeDelivery: false,
+    totalCancelled: 0
+  });
   res.status(200).json(new ApiResponse(200, { totalBookingRequests: total }));
 });
 
@@ -208,6 +206,7 @@ export const getTotalCancelled = asyncHandler(async (req, res) => {
 
 // Get Total Revenue Controller
 // Get Total Revenue Controller
+// Controller to get total revenue from quotations
 export const getTotalRevenue = asyncHandler(async (req, res) => {
   const quotations = await Quotation.find();
 
@@ -218,9 +217,19 @@ export const getTotalRevenue = asyncHandler(async (req, res) => {
     // Accumulate the computed revenue
     return sum + computedRevenue;
   }, 0);
-
+  console.log("Total Revenue:", total);
   res.status(200).json(new ApiResponse(200, { totalRevenue: total }));
 });
+
+
+
+// Controller to get total revenue from quotations
+
+
+
+
+
+
 
 
 // Search Quotation by Booking ID Controller
@@ -242,12 +251,12 @@ export const searchQuotationByBookingId = asyncHandler(async (req, res, next) =>
   res.status(200).json(new ApiResponse(200, quotation));
 });
 
-export const getActiveList = asyncHandler(async(req,res)=>{
+export const getActiveList = asyncHandler(async (req, res) => {
   const activeQuotations = await Quotation.find({ activeDelivery: true })
     .populate("startStation", "stationName")
     .populate("customerId", "firstName lastName");
 
-    const formatted = formatQuotations(activeQuotations);
+  const formatted = formatQuotations(activeQuotations);
 
   res.status(200).json(new ApiResponse(200, {
     totalActiveDeliveries: activeQuotations.length,
@@ -255,7 +264,7 @@ export const getActiveList = asyncHandler(async(req,res)=>{
   }));
 });
 
-export const getCancelledList = asyncHandler(async(req,res)=>{
+export const getCancelledList = asyncHandler(async (req, res) => {
   const cancelledQuotations = await Quotation.find({ totalCancelled: { $gt: 0 } })
     .populate("startStation", "stationName")
     .populate("customerId", "firstName lastName");
@@ -269,39 +278,43 @@ export const getCancelledList = asyncHandler(async(req,res)=>{
 });
 
 
-export const getQuotationRevenueList = async (req, res) => {
-  try {
-    const quotation = await Quotation.find({ totalCancelled: 0 })
-      .select('bookingId bookingDate startStation endStation toCity grandTotal')
-      .populate('startStation endStation', 'stationName')
-      .lean();
+// Controller to get revenue details from quotations
+// Controller to get total revenue from quotations
+export const getRevenue = asyncHandler(async (req, res) => {
+  // Fetch all quotations that are NOT cancelled
+  const quotations = await Quotation.find({ totalCancelled: 0 })
+    .select('bookingId quotationDate startStationName endStation grandTotal computedTotalRevenue')
+    .lean();
 
-    const totalRevenue = quotation.reduce((sum, b) => sum + b.grandTotal, 0);
+  // Calculate total revenue using grandTotal or computedTotalRevenue (choose what fits your logic)
+  const total = quotations.reduce((sum, q) => {
+    // Use the computedTotalRevenue from the virtual field
+    const computedRevenue = Number(q.computedTotalRevenue) || 0;
 
-    const data = quotation.map((b, i) => ({
-      SNo:       i + 1,
-      bookingId: b.bookingId,
-      date:      b.quotationDate,
-      pickup:    b.startStation.stationName,
-      drop:      b.toCity,
-      revenue:   b.grandTotal.toFixed(2),
-      action: {
-        view:   `/quotation/${b.bookingId}`,
-        edit:   `/quotation/edit/${b.bookingId}`,
-        delete: `/quotation/delete/${b.bookingId}`
-      }
-    }));
+    // Accumulate the computed revenue
+    return sum + computedRevenue;
+  }, 0);
+  console.log("Total Revenue:", total);
 
-    res.json({
-      totalRevenue: totalRevenue.toFixed(2),
-      count:        data.length,
-      data
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
-  }
-};
+  // Prepare data array for detailed response
+  const data = quotations.map((q, index) => ({
+    SNo: index + 1,
+    bookingId: q.bookingId,
+    date: q.quotationDate ? new Date(q.quotationDate).toISOString().slice(0, 10) : 'N/A',
+    pickup: q.startStationName || 'Unknown',
+    drop: q.endStation || 'Unknown',
+    revenue: (Number(q.grandTotal) || Number(q.computedTotalRevenue) || 0).toFixed(2),
+  }));
+
+  res.status(200).json({
+    totalRevenue: total.toFixed(2),
+    count: data.length,
+    data,
+  });
+});
+
+
+
 
 // Update Quotation Status Controller (query only, no cancel reason)
 export const updateQuotationStatus = asyncHandler(async (req, res, next) => {
@@ -337,67 +350,59 @@ export const updateQuotationStatus = asyncHandler(async (req, res, next) => {
 // Get List of Booking Requests (Not active, not cancelled)
 export const RequestBookingList = asyncHandler(async (req, res) => {
   // Fetch quotations that are not active and not cancelled
-  const quotations = await Quotation.find({ 
-    activeDelivery: false, 
-    totalCancelled: 0 
+  const quotations = await Quotation.find({
+    activeDelivery: false,
+    totalCancelled: 0
   })
     .populate("startStation", "stationName")
     .populate("customerId", "firstName lastName");
 
- 
-  const formatted = formatQuotations(quotations);  
+
+  const formatted = formatQuotations(quotations);
 
   // Return the formatted list
-  res.status(200).json(new ApiResponse(200, { 
+  res.status(200).json(new ApiResponse(200, {
     totalNonActiveNonCancelled: quotations.length,
-    deliveries: formatted 
+    deliveries: formatted
   }));
 });
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',  
+  service: 'gmail',
   auth: {
-    user: process.env.gmail, 
-    pass: process.env.app_pass   
+    user: process.env.gmail,
+    pass: process.env.app_pass
   }
 });
 
-export const sendBookingEmail = async (req, res) => {
-  try {
-    const { bookingId } = req.body;
+export const sendBookingEmail = async (email, booking) => {
 
-    // Find the booking using bookingId
-    const booking = await Quotation.findOne({ bookingId });
 
-    if (!booking) {
-      return res.status(404).json({ message: 'Quotation not found' });
-    }
+  const {
+    firstName,
+    lastName,
 
-    const { 
-      firstName, 
-      lastName, 
-      email, 
-      fromAddress, 
-      fromCity, 
-      fromState, 
-      fromPincode,
-      toAddress, 
-      toState, 
-      toCity, 
-      toPincode, 
-      productDetails, 
-      grandTotal 
-    } = booking;
-    
-    let productDetailsText = '';
-    productDetails.forEach(product => {
-      productDetailsText += `\nName: ${product.name}, Weight: ${product.weight}, Quantity: ${product.quantity}, Price: ${product.price}`;
-    });
-    const mailOptions = {
-      from: process.env.gmail,
-      to: email,
-      subject: `Quotation Details - ${booking.bookingId}`,
-      html: `
+    fromAddress,
+    fromCity,
+    fromState,
+    fromPincode,
+    toAddress,
+    toState,
+    toCity,
+    toPincode,
+    productDetails,
+    grandTotal
+  } = booking;
+
+  let productDetailsText = '';
+  productDetails.forEach(product => {
+    productDetailsText += `\nName: ${product.name}, Weight: ${product.weight}, Quantity: ${product.quantity}, Price: ${product.price}`;
+  });
+  const mailOptions = {
+    from: process.env.gmail,
+    to: email,
+    subject: `Quotation Details - ${booking.bookingId}`,
+    html: `
         <h2><b>Quotation Details</b></h2>
         <p>Dear ${firstName} ${lastName},</p>
         <p>Your booking with Booking ID: <strong>${booking.bookingId}</strong> has been successfully created.</p>
@@ -413,20 +418,13 @@ export const sendBookingEmail = async (req, res) => {
         <p>Thank you for choosing our service.</p>
         <p>Best regards,<br>BharatParcel Team</p>
       `
-    };
-    
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error('Error sending email:', error);
-        return res.status(500).json({ message: 'Failed to send email' });
-      } else {
-        console.log('Email sent: ' + info.response);
-        return res.status(200).json({ message: 'Email sent successfully' });
-      }
-    });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+  };
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Booking confirmation email sent to ${email}`);
+  } catch (error) {
+    console.error('Error sending booking confirmation email:', error);
   }
+
+
 };

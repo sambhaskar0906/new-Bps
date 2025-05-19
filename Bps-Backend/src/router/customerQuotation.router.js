@@ -1,23 +1,24 @@
 import express from "express";
-import { 
-  createQuotation, 
-  getAllQuotations, 
-  getQuotationById, 
-  updateQuotation, 
-  deleteQuotation, 
-  getTotalBookingRequests, 
-  getTotalActiveDeliveries, 
-  getTotalCancelled, 
-  getTotalRevenue, 
+import {
+  createQuotation,
+  getAllQuotations,
+  getQuotationById,
+  updateQuotation,
+  deleteQuotation,
+  getTotalBookingRequests,
+  getTotalActiveDeliveries,
+  getTotalCancelled,
+  getTotalRevenue,
   getActiveList,
   getCancelledList,
-  getQuotationRevenueList,
-  searchQuotationByBookingId ,
+  getRevenue,
+  searchQuotationByBookingId,
   RequestBookingList,
   updateQuotationStatus,
-  sendBookingEmail
+  sendBookingEmail,
+
 } from "../controller/customerQuotation.controller.js";
-import { parseFormData } from "../middleware/multerParser.middleware.js"; 
+import { parseFormData } from "../middleware/multerParser.middleware.js";
 
 const router = express.Router();
 
@@ -39,15 +40,15 @@ router.get("/total-cancelled", getTotalCancelled);
 // Route to get total revenue
 router.get("/total-revenue", getTotalRevenue);
 
-router.get("/active-list",getActiveList);
+router.get("/active-list", getActiveList);
 
-router.get("/cancelled-list",getCancelledList);
+router.get("/cancelled-list", getCancelledList);
 
-router.get("/revenue-list",getQuotationRevenueList)
+router.get("/revenue-list", getRevenue)
 
-router.get("/send-Booking-Email",sendBookingEmail)
+router.get("/send-Booking-Email", sendBookingEmail)
 
-router.get("/booking-request-list",RequestBookingList)
+router.get("/booking-request-list", RequestBookingList)
 
 router.patch("/status/:bookingId", updateQuotationStatus);
 // Route to get a single quotation by its ID
