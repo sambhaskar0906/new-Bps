@@ -35,10 +35,12 @@ import {
   Book as BookOnlineIcon,
   LocalShipping as LocalShippingIcon,
   Visibility as VisibilityIcon,
+
 } from "@mui/icons-material";
 import AddIcon from "@mui/icons-material/Add";
+
 import { useDispatch, useSelector } from 'react-redux';
-import { bookingRequestCount, activeBookingCount, cancelledBookingCount, fetchBookingsByType } from '../../../features/booking/bookingSlice'
+import { bookingRequestCount, activeBookingCount, cancelledBookingCount, fetchBookingsByType, cancelBooking, deleteBooking } from '../../../features/booking/bookingSlice'
 
 
 const createData = (id, orderby, date, namep, pickup, named, drop, contact) => ({
@@ -157,9 +159,13 @@ const BookingCard = () => {
     setBookingToDelete(row);
     setDeleteDialogOpen(true);
   };
+  const handleCancel = (bookingId) => {
+    dispatch(cancelBooking(bookingId))
+    window.location.reload();
+  }
 
-  const handleDeleteConfirm = () => {
-    setBookings(bookings.filter(booking => booking.id !== bookingToDelete.id));
+  const handleDeleteConfirm = (bookingId) => {
+    dispatch(deleteBooking(bookingId))
     setDeleteDialogOpen(false);
     setBookingToDelete(null);
   };
@@ -169,7 +175,7 @@ const BookingCard = () => {
     setBookingToDelete(null);
   };
 
-  const filteredRows = bookingList.filter(
+  const filteredRows = Array.isArray(bookingList) ? bookingList.filter(
     (row) =>
       (row.orderby && row.orderby.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (row.namep && row.namep.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -177,7 +183,8 @@ const BookingCard = () => {
       (row.pickup && row.pickup.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (row.drop && row.drop.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (row.contact && row.contact.includes(searchTerm))
-  );
+  ) : []
+    ;
   const cardData = [
     {
       id: 1,
@@ -374,7 +381,7 @@ const BookingCard = () => {
                 .map((row, index) => (
                   <TableRow key={row.bookingId} hover>
                     <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-                    <TableCell>{row.orderby}</TableCell>
+                    <TableCell>{row.orderBy}</TableCell>
                     <TableCell>{row.date}</TableCell>
                     <TableCell>{row.fromName}</TableCell>
                     <TableCell>{row.pickup}</TableCell>
@@ -401,8 +408,16 @@ const BookingCard = () => {
                         </IconButton>
                         <IconButton
                           size="small"
+                          color="primary"
+                          onClick={() => handleCancel(row.bookingId)}
+                          title="CancelScheduleSend"
+                        >
+                          <CancelScheduleSendIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
                           color="error"
-                          onClick={() => handleDeleteClick(row)}
+                          onClick={() => handleDeleteClick(row.bookingId)}
                           title="Delete"
                         >
                           <DeleteIcon fontSize="small" />

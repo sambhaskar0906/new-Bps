@@ -40,6 +40,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
     getAvailableVehiclesCount, getDeactivatedVehiclesCount, getBlacklistedVehiclesCount, getTotalVehiclesCount,
     getTotalVehiclesList, getBlacklistedVehiclesList, getAvailableVehiclesList, getDeactivatedVehicles, deleteVehicle
+    , updateStatus
 } from '../../../features/vehicle/vehicleSlice';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -155,6 +156,10 @@ const VehicleCard = ({ onSelect }) => {
 
     const handleCardClick = (type) => {
         setSelectedList(type); // triggers useEffect to auto-fetch
+    };
+    const handleStatusChange = (vehicleId, action) => {
+        dispatch(updateStatus({ vehicleId, action }));
+        window.location.reload();
     };
     const cardData = [
         {
@@ -413,19 +418,19 @@ const VehicleCard = ({ onSelect }) => {
                                                         }
                                                     }}
                                                 >
-                                                    <MenuItem onClick={() => handleClose('Active')}>
+                                                    <MenuItem onClick={() => handleStatusChange(row.vehicleId, 'available')}>
                                                         <ListItemIcon>
                                                             <CheckCircleIcon sx={{ color: 'green' }} fontSize="small" />
                                                         </ListItemIcon>
                                                         <ListItemText primary="Active" />
                                                     </MenuItem>
-                                                    <MenuItem onClick={() => handleClose('Inactive')}>
+                                                    <MenuItem onClick={() => handleStatusChange(row.vehicleId, 'deactivated')}>
                                                         <ListItemIcon>
                                                             <CancelIcon sx={{ color: 'orange' }} fontSize="small" />
                                                         </ListItemIcon>
                                                         <ListItemText primary="Inactive" />
                                                     </MenuItem>
-                                                    <MenuItem onClick={() => handleClose('Blacklisted')}>
+                                                    <MenuItem onClick={() => handleStatusChange(row.vehicleId, 'blacklisted')}>
                                                         <ListItemIcon>
                                                             <BlockIcon sx={{ color: 'red' }} fontSize="small" />
                                                         </ListItemIcon>

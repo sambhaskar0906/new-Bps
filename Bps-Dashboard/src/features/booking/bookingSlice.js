@@ -20,7 +20,7 @@ export const createBooking = createAsyncThunk(
 export const deleteBooking = createAsyncThunk(
   '/booking/deleteBooking', async (bookingId, thunkApi) => {
     try {
-      const res = await axios.delete(`${BASE_URL}/delete/{bookingId}`)
+      const res = await axios.delete(`${BASE_URL}/delete/${bookingId}`)
       return bookingId;
     }
     catch (error) {
@@ -103,18 +103,30 @@ export const updateBookingById = createAsyncThunk(
 )
 export const revenueList = createAsyncThunk(
   'revenueList/booking', async (_, thunkApi) => {
-    try {
-      const res = await axios.get(`${BASE_URL}/revenue-list`);
-      return {
-        totalRevenue: res.data.totalRevenue,
-        revenueList: res.data.data
-      }
-    }
-    catch (err) {
-      return thunkApi.rejectWithValue(err.response?.data?.message || 'failed to view totalReveunue')
+  try {
+    const res = await axios.get(`${BASE_URL}/revenue-list`);
+    return {
+      totalRevenue: res.data.totalRevenue,
+      revenueList: res.data.data
     }
   }
+  catch (err) {
+    return thunkApi.rejectWithValue(err.response?.data?.message || 'failed to view totalReveunue')
+  }
+}
 
+)
+export const cancelBooking = createAsyncThunk(
+  'cancel/booking', async (bookingId, thunkApi) => {
+    try {
+      const res = await axios.patch(`${BASE_URL}/${bookingId}/cancel`)
+      return res.data.booking;
+
+    }
+    catch (err) {
+      return thunkApi.rejectWithValue(err.response?.data?.message);
+    }
+  }
 )
 const initialState = {
   list: [],
@@ -280,6 +292,18 @@ const bookingSlice = createSlice({
       .addCase(revenueList.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(cancelBooking.pending, (state) => {
+        state.loading = true;
+        state.error = null
+      })
+      .addCase(cancelBooking.fulfilled, (state, action) => {
+        state.loading = false;
+        state.list = action.payload
+      })
+      .addCase(cancelBooking.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload
       })
       ;
   }

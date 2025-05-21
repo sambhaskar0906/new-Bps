@@ -18,7 +18,7 @@ import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchActiveCustomer, deleteCustomer, fetchBlackListedCustomer, fetchActiveCustomerCount, fetchBlackListedCustomerCount } from '../../../features/customers/customerSlice';
+import { fetchActiveCustomer, deleteCustomer, fetchBlackListedCustomer, fetchActiveCustomerCount, fetchBlackListedCustomerCount, updateStatusActivate, updateStatusBacklist } from '../../../features/customers/customerSlice';
 
 const customerHeadCells = [
   { id: 'index', label: 'S. No', sortable: false },
@@ -99,10 +99,13 @@ const CustomerCard = ({ onSelect }) => {
   const handleFetchActive = () => dispatch(fetchActiveCustomer());
   const handleFetchBlacklisted = () => dispatch(fetchBlackListedCustomer());
 
-  const filteredCustomers = customerList?.filter((row) =>
-    row?.name?.toLowerCase()?.includes(searchTerm) ||
-    row?.customerId?.toLowerCase()?.includes(searchTerm)
-  );
+  const filteredCustomers = Array.isArray(customerList)
+    ? customerList.filter((row) =>
+      row?.name?.toLowerCase()?.includes(searchTerm) ||
+      row?.customerId?.toLowerCase()?.includes(searchTerm)
+    )
+    : [];
+
 
   const emptyRows = Math.max(0, (1 + page) * rowsPerPage - filteredCustomers.length);
 
@@ -117,6 +120,14 @@ const CustomerCard = ({ onSelect }) => {
     }
   };
 
+  const handleStatusActivate = (customerId) => {
+    dispatch(updateStatusActivate(customerId));
+    window.location.reload();
+  }
+  const handleStatusBacklist = (customerId) => {
+    dispatch(updateStatusBacklist(customerId));
+    window.location.reload();
+  }
   return (
     <Box sx={{ p: 3 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -251,13 +262,13 @@ const CustomerCard = ({ onSelect }) => {
                           }
                         }}
                       >
-                        <MenuItem onClick={() => handleClose('Active')}>
+                        <MenuItem onClick={() => handleStatusActivate(row.customerId)}>
                           <ListItemIcon>
                             <CheckCircleIcon sx={{ color: 'green' }} fontSize="small" />
                           </ListItemIcon>
                           <ListItemText primary="Active" />
                         </MenuItem>
-                        <MenuItem onClick={() => handleClose('Blacklisted')}>
+                        <MenuItem onClick={() => handleStatusBacklist(row.customerId)}>
                           <ListItemIcon>
                             <BlockIcon sx={{ color: 'red' }} fontSize="small" />
                           </ListItemIcon>
