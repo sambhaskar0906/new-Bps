@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     AppBar,
     Toolbar,
@@ -13,15 +13,32 @@ import {
     ListItemIcon,
 } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
-import PersonIcon from '@mui/icons-material/Person';
-import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const AppBarHeader = () => {
-    const navigate = useNavigate();
-    const email = "admin@example.com"; // Replace with real user email
-
     const [anchorEl, setAnchorEl] = useState(null);
+    const [user, setUser] = useState(null);
     const open = Boolean(anchorEl);
+
+    useEffect(() => {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            const fatchData = axios.get('http://localhost:8000/api/v2/users/profile', {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+                .then(response => {
+                    setUser(response.data.message);
+                })
+                .catch(error => {
+                    console.error('Failed to fetch profile:', error);
+                    setUser(null);
+                });
+            console.log("fatchinf adminImg data", fatchData)
+        }
+    }, []);
+
 
     const handleOpenMenu = (event) => {
         setAnchorEl(event.currentTarget);
@@ -48,8 +65,8 @@ const AppBarHeader = () => {
                     <Tooltip title="Open Profile Menu">
                         <IconButton onClick={handleOpenMenu} sx={{ p: 0 }}>
                             <Avatar
-                                alt="Profile"
-                                src="https://i.pravatar.cc/150?img=5"
+                                alt={user?.name}
+                                src={`http://localhost:8000/${user?.adminProfilePhoto?.replace(/\\/g, '/')}`}
                                 sx={{ width: 40, height: 40 }}
                             />
                         </IconButton>
@@ -79,15 +96,16 @@ const AppBarHeader = () => {
                         {/* User Info */}
                         <MenuItem sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
                             <Avatar
-                                src="https://i.pravatar.cc/150?img=5"
+                                src={`http://localhost:8000/${user?.adminProfilePhoto?.replace(/\\/g, '/')}`}
                                 sx={{ width: 40, height: 40 }}
                             />
                             <Box>
                                 <Typography variant="subtitle2" fontWeight={600}>
-                                    Admin
+                                    {user?.firstName} {user?.lastName}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    {email}
+
+                                <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
+                                    {user?.emailId}
                                 </Typography>
                             </Box>
                         </MenuItem>

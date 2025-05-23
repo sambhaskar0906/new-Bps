@@ -1,11 +1,139 @@
-import React from 'react'
+import React, { useState } from 'react';
+import {
+    Box, TextField, Button, MenuItem, Typography, Table, TableBody, TableCell,
+    TableContainer, TableHead, TableRow, Paper, Grid
+} from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs from 'dayjs';
 
 const LedgerCard = () => {
-    return (
-        <div>
-            Ledger Card
-        </div>
-    )
-}
+    const [orderType, setOrderType] = useState('');
+    const [fromDate, setFromDate] = useState(dayjs());
+    const [toDate, setToDate] = useState(dayjs());
+    const [comment, setComment] = useState('');
 
-export default LedgerCard
+    const orderOptions = [
+        { value: 'booking', label: 'Booking Order' },
+        { value: 'quotation', label: 'Quotation Order' },
+    ];
+
+    const rows = [
+        { id: 1, date: '2025-05-01', bookingId: 'BK001', pickup: 'Delhi', drop: 'Mumbai' },
+        { id: 2, date: '2025-05-02', bookingId: 'BK002', pickup: 'Jaipur', drop: 'Chennai' },
+    ];
+
+    return (
+        <Box p={4} component={Paper} elevation={3} sx={{ borderRadius: 3 }}>
+            <Typography variant="h5" gutterBottom>
+                Ledger Card
+            </Typography>
+
+            <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} sm={4}>
+                    <TextField fullWidth label="Search for Customer" variant="outlined" />
+                </Grid>
+
+                <Grid item xs={12} sm={4}>
+                    <TextField
+                        select
+                        fullWidth
+                        label="Order Type"
+                        value={orderType}
+                        onChange={(e) => setOrderType(e.target.value)}
+                        sx={{ minWidth: 200 }}
+                    >
+                        {orderOptions.map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                </Grid>
+
+                <Grid item xs={6} sm={2}>
+                    <DatePicker
+                        label="From Date"
+                        value={fromDate}
+                        onChange={(newValue) => setFromDate(newValue)}
+                    />
+                </Grid>
+                <Grid item xs={6} sm={2}>
+                    <DatePicker
+                        label="To Date"
+                        value={toDate}
+                        onChange={(newValue) => setToDate(newValue)}
+                    />
+                </Grid>
+
+                <Grid item xs={12}>
+                    <Button variant="contained" color="primary">
+                        Get Invoice
+                    </Button>
+                </Grid>
+            </Grid>
+
+            <Box mt={4}>
+                <TableContainer component={Paper}>
+                    <Table>
+                        <TableHead>
+                            <TableRow sx={{ backgroundColor: "#1565c0" }}>
+                                <TableCell sx={{ fontWeight: "bold", color: "white" }}>S.No</TableCell>
+                                <TableCell sx={{ fontWeight: "bold", color: "white" }}>Date</TableCell>
+                                <TableCell sx={{ fontWeight: "bold", color: "white" }}>Booking ID</TableCell>
+                                <TableCell sx={{ fontWeight: "bold", color: "white" }}>Pickup</TableCell>
+                                <TableCell sx={{ fontWeight: "bold", color: "white" }}>Drop</TableCell>
+                                <TableCell sx={{ fontWeight: "bold", color: "white" }}>Action</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {rows.map((row, idx) => (
+                                <TableRow key={row.id}>
+                                    <TableCell>{idx + 1}</TableCell>
+                                    <TableCell>{row.date}</TableCell>
+                                    <TableCell>{row.bookingId}</TableCell>
+                                    <TableCell>{row.pickup}</TableCell>
+                                    <TableCell>{row.drop}</TableCell>
+                                    <TableCell>
+                                        <Button variant="outlined" size="small">View</Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Box>
+
+            <Grid container spacing={2} mt={2}>
+                <Grid item xs={6}>
+                    <Typography variant="subtitle1">
+                        <strong>Total Amount:</strong> ₹10,000
+                    </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                    <Typography variant="subtitle1">
+                        <strong>Remaining Amount:</strong> ₹3,000
+                    </Typography>
+                </Grid>
+            </Grid>
+
+            <Box mt={2}>
+                <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    label="Additional Comment"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                />
+            </Box>
+
+            <Box mt={2}>
+                <Button variant="contained" color="success">
+                    Submit
+                </Button>
+            </Box>
+        </Box>
+    );
+};
+
+export default LedgerCard;

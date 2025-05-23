@@ -32,8 +32,11 @@ import ViewVehicle from '../Pages/Admin/Vehicle/Form/ViewVehicle';
 import EditVehicle from '../Pages/Admin/Vehicle/Form/EditVehicle';
 import ViewQuotation from '../Pages/Admin/Quotation/Form/ViewQuotation';
 import EditQuotations from '../Pages/Admin/Quotation/Form/EditQuotation';
-import TotalRevenue from '../Pages/Admin/Booking/TotalRevenue';
-import TotaLRevenue from '../Pages/Admin/Quotation/TotalRevenue';
+import LedgerHistory from '../Pages/Admin/LedgerHistory/LedgerHistory';
+import ExpensesCard from '../Pages/Admin/Expenses/ExpensesCard';
+import UserForm from '../Pages/Admin/Manage User/Form/UserForm';
+import EditUser from '../Pages/Admin/Manage User/Form/EditUser';
+import ViewUser from '../Pages/Admin/Manage User/Form/ViewUser';
 
 const MainRoute = () => {
     const isAuthenticated = localStorage.getItem("authToken") !== null;
@@ -52,7 +55,6 @@ const MainRoute = () => {
         <DashboardLayout>
             <Routes>
                 <Route path="/" element={<Dashboard />} />
-                <Route path='/booking' element={<BookingCard />} />
                 <Route path='/contact' element={<ContactCard />} />
                 <Route path='/customer' element={<CustomerCard />} />
                 <Route path='/delivery' element={<DeliveryCard />} />
@@ -65,8 +67,14 @@ const MainRoute = () => {
 
                 <Route path='/tracker' element={<TrackerCard />} />
 
+                {/* Ledger Manage */}
                 <Route path='/ladger' element={<LedgerCard />} />
-                <Route path='/users' element={<UserCard />} />
+                <Route path='/ladgerhsitory' element={<LedgerHistory />} />
+
+                {/* Ledger Manage */}
+                <Route path='/expenses' element={<ExpensesCard />} />
+
+
 
                 <Route path='/contact' element={<ContactCard />} />
                 {/* Sation Routing */}
@@ -93,14 +101,18 @@ const MainRoute = () => {
                 <Route path='/booking/new' element={<BookingForm />} />
                 <Route path='/booking/:bookingId' element={<ViewBooking />} />
                 <Route path='/editbooking/:bookingId' element={<EditBooking />} />
-                <Route path='/totalrevenue' element={<TotalRevenue />} />
 
                 {/* Quotation routing */}
                 <Route path='/quotation' element={<QuotationCard />} />
                 <Route path='/quotationform' element={<QuotationForm />} />
                 <Route path="/viewquotation/:bookingId" element={<ViewQuotation />} />
                 <Route path="/updatequotation/:bookingId" element={<EditQuotations />} />
-                <Route path='/totalrevenu' element={<TotaLRevenue />} />
+
+                {/*User Routing */}
+                <Route path='/users' element={<UserCard />} />
+                <Route path='/userform' element={<UserForm />} />
+                <Route path='/viewuser/:adminId' element={<ViewUser />} />
+                <Route path='/edituser/:adminId' element={<EditUser />} />
 
 
             </Routes>

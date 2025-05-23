@@ -11,6 +11,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ContactPageIcon from '@mui/icons-material/ContactPage';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
+import EditNoteIcon from '@mui/icons-material/EditNote';
 
 export const sidebarItems = [
     { label: 'Dashboard', route: '/', icon: <DashboardIcon /> },
@@ -22,7 +23,9 @@ export const sidebarItems = [
     { label: 'Tracker', route: '/tracker', icon: <MapIcon /> },
     { label: 'Quotation', route: '/quotation', icon: <RequestQuoteIcon /> },
     { label: 'Ladger', route: '/ladger', icon: <AccountBalanceIcon /> },
+    { label: 'Ladger History', route: '/ladgerhsitory', icon: <AccountBalanceIcon /> },
     { label: 'Manage User', route: '/users', icon: <PeopleIcon /> },
     { label: 'Manage Station', route: '/station', icon: <LocationOnIcon /> },
+    { label: 'Manage Expenses', route: '/expenses', icon: <EditNoteIcon /> },
     { label: 'Contact', route: '/contact', icon: <ContactPageIcon /> },
 ];
