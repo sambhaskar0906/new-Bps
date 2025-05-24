@@ -47,7 +47,7 @@ router.route("/profile").get(verifyJwt, getUserProfile);
 router.route("/logout").post(verifyJwt, logoutUser)
 // Admin user CRUD
 router.get("/admin/users", getAllUsersForAdmin);
-router.get("/admin/user/:id", getUserById);
+router.get("/admin/user/:adminId", getUserById);
 router.route("/admin/user/:adminId").put(upload.fields([
   {
     name: "idProofPhoto",

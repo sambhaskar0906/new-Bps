@@ -7,20 +7,33 @@ const initialState = {
     loading: false,
     error: null,
     isAuthenticated: false,
+    role: null,
 };
 
-// Async thunk for login
 export const loginUser = createAsyncThunk(
     'auth/loginUser',
     async (credentials, { rejectWithValue }) => {
         try {
-            // Make sure credentials has emailId and password
             const response = await axios.post('http://localhost:8000/api/v2/users/login', credentials);
-            // Backend response example: { user: {...}, token: '...' }
             return response.data;
         } catch (err) {
-            // Return error message from backend or fallback
             return rejectWithValue(err.response?.data || { message: 'Login failed' });
+        }
+    }
+);
+
+export const fetchUserProfile = createAsyncThunk(
+    'auth/fetchUserProfile',
+    async (token, { rejectWithValue }) => {
+        try {
+            const response = await axios.get('http://localhost:8000/api/v2/users/profile', {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            return response.data;
+        } catch (err) {
+            return rejectWithValue(err.response?.data || { message: 'Failed to fetch profile' });
         }
     }
 );
@@ -32,6 +45,7 @@ const authSlice = createSlice({
         logout: (state) => {
             state.user = null;
             state.token = null;
+            state.role = null;
             state.isAuthenticated = false;
             state.error = null;
             state.loading = false;
@@ -45,13 +59,20 @@ const authSlice = createSlice({
             })
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.loading = false;
-                state.user = action.payload.user;
-                state.token = action.payload.token;
+                state.token = action.payload.message.token;
                 state.isAuthenticated = true;
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload?.message || 'Login failed';
+            })
+            .addCase(fetchUserProfile.fulfilled, (state, action) => {
+                const userProfile = action.payload.message;
+                state.user = userProfile;
+                state.role = userProfile.role;
+            })
+            .addCase(fetchUserProfile.rejected, (state, action) => {
+                state.error = action.payload?.message || 'Failed to fetch profile';
             });
     },
 });

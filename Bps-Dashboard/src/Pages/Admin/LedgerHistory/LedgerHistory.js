@@ -1,33 +1,21 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
     Box, Button, Typography, TableContainer, Table,
     TableHead, TableRow, TableCell, TableBody, Paper, IconButton
 } from '@mui/material';
 import PrintIcon from '@mui/icons-material/Print';
 import { useReactToPrint } from 'react-to-print';
+import { useDispatch, useSelector } from 'react-redux';
+import { allLedger } from '../../../features/customerLedger/customerLedgerSlice';
 
-const invoiceData = [
-    {
-        id: 'INV001',
-        date: '2025-05-20',
-        name: 'John Doe',
-        orderAmount: 1500,
-        totalAmount: 2000,
-        remainingAmount: 500,
-    },
-    {
-        id: 'INV002',
-        date: '2025-05-19',
-        name: 'Jane Smith',
-        orderAmount: 2500,
-        totalAmount: 3000,
-        remainingAmount: 500,
-    },
-];
 
 const LedgerHistory = () => {
     const componentRef = useRef();
-
+    const dispatch = useDispatch();
+    const { invoices: invoiceData } = useSelector((state) => state.ledger);
+    useEffect(() => {
+        dispatch(allLedger());
+    }, [dispatch])
     const handlePrint = useReactToPrint({
         content: () => componentRef.current,
     });
@@ -74,11 +62,11 @@ const LedgerHistory = () => {
                         {invoiceData.map((invoice, index) => (
                             <TableRow key={invoice.id}>
                                 <TableCell>{index + 1}</TableCell>
-                                <TableCell>{invoice.id}</TableCell>
+                                <TableCell>{invoice.invoiceId}</TableCell>
                                 <TableCell>{invoice.date}</TableCell>
                                 <TableCell>{invoice.name}</TableCell>
-                                <TableCell>{invoice.orderAmount}</TableCell>
-                                <TableCell>{invoice.totalAmount}</TableCell>
+                                <TableCell>{invoice.amount}</TableCell>
+                                <TableCell>{invoice.paidAmount}</TableCell>
                                 <TableCell>{invoice.remainingAmount}</TableCell>
                                 <TableCell>
                                     <IconButton color="primary">

@@ -50,11 +50,17 @@ const UserSchema = new mongoose.Schema(
     },
     idProofPhoto: {
       type: String,
-      required:true,
+      required: true,
     },
     adminProfilePhoto: {
       type: String,
-      required:true
+      required: true
+    },
+    pincode: {
+      type: Number
+    },
+    startStation: {
+      type: String
     },
     role: {
       type: String,
@@ -73,6 +79,10 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: true
     },
+    isDeactivated: {
+      type: Boolean,
+      default: false
+    },
     verificationCode: {
       type: String,
     },
@@ -86,7 +96,7 @@ const UserSchema = new mongoose.Schema(
 
 UserSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
-    this.password = await bcrypt.hash(this.password, 10); 
+    this.password = await bcrypt.hash(this.password, 10);
   }
 
   if (!this.adminId) {

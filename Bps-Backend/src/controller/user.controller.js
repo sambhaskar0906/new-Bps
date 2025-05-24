@@ -3,18 +3,19 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import fs from "fs/promises";
-import jwt from "jsonwebtoken";  
-import  nodemailer from "nodemailer";
+import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
 import bcrypt from "bcrypt"
 // Register a new user
 export const registerUser = asyncHandler(async (req, res) => {
+
   try {
     if (req.body.role === 'admin' && req.body.isBlacklisted === true) {
       throw new ApiError(400, "Admin users cannot be blacklisted");
     }
     let userData = { ...req.body };
 
-    
+
     if (req.files) {
       if (req.files['idProofPhoto']) {
         userData.idProofPhoto = req.files['idProofPhoto'][0].path; // File path
@@ -24,7 +25,7 @@ export const registerUser = asyncHandler(async (req, res) => {
       }
     }
 
-   
+
     if (!userData.idProofPhoto || !userData.adminProfilePhoto) {
       throw new ApiError(400, "Both idProofPhoto and adminProfilePhoto are required.");
     }
@@ -33,7 +34,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     await user.save();
     res.status(201).json(new ApiResponse(201, "User registered successfully", user));
   } catch (error) {
-    console.log("error message",error.message);
+    console.log("error message", error.message);
     throw new ApiError(400, "Registration failed", error.message);
   }
 });
@@ -41,7 +42,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   try {
     const { emailId, password } = req.body;
 
-    
+
     if (!emailId || !password) {
       throw new ApiError(400, "Email and password are required");
     }
@@ -130,7 +131,8 @@ export const getAllUsersForAdmin = asyncHandler(async (req, res) => {
 // Get user by ID
 export const getUserById = asyncHandler(async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const adminId = req.params.adminId
+    const user = await User.findOne({ adminId });
     if (!user) {
       throw new ApiError(404, "User not found");
     }
@@ -209,7 +211,7 @@ export const countTotalAdmins = asyncHandler(async (req, res) => {
 
 // Count total supervisors
 export const countTotalSupervisors = asyncHandler(async (req, res) => {
-  const totalSupervisors = await User.countDocuments({ role: 'supervisor' });
+  const totalSupervisors = await User.countDocuments({ role: 'supervisor', isActive: true, isBlacklisted: false, isDeactivated: false });
   res.status(200).json(new ApiResponse(200, "Total number of supervisors fetched", totalSupervisors));
 });
 
@@ -221,18 +223,18 @@ export const countBlacklistedSupervisors = asyncHandler(async (req, res) => {
 
 // Count deactivated supervisors
 export const countDeactivatedSupervisors = asyncHandler(async (req, res) => {
-  const deactivatedSupervisors = await User.countDocuments({ role: 'supervisor', isActive: false });
+  const deactivatedSupervisors = await User.countDocuments({ role: 'supervisor', isDeactivated: true, isActive: false, isBlacklisted: false });
   res.status(200).json(new ApiResponse(200, "Total deactivated supervisors fetched", deactivatedSupervisors));
 });
 
 // Get list of all supervisors
 export const getSupervisorsList = asyncHandler(async (req, res) => {
   try {
-    const supervisors = await User.find({ role: 'supervisor',isActive:true,isBlacklisted:false }).select("adminId firstName lastName contactNumber");
+    const supervisors = await User.find({ role: 'supervisor', isActive: true, isBlacklisted: false, isDeactivated: false }).select("adminId firstName lastName contactNumber");
 
     const formattedSupervisors = supervisors.map((supervisor, index) => ({
       sNo: index + 1,
-      supervisorId: supervisor.adminId,
+      adminId: supervisor.adminId,
       name: `${supervisor.firstName} ${supervisor.lastName}`,
       contact: supervisor.contactNumber,
     }));
@@ -258,7 +260,7 @@ export const getAdminsList = asyncHandler(async (req, res) => {
 
       return {
         "S.No": index + 1,
-        "Super admin Id": admin.adminId,
+        adminId: admin.adminId,
         name: `${admin.firstName} ${admin.lastName}`,
         contact: admin.contactNumber,
       };
@@ -274,12 +276,12 @@ export const getAdminsList = asyncHandler(async (req, res) => {
 // Get list of deactivated supervisors
 export const getDeactivatedSupervisorsList = asyncHandler(async (req, res) => {
   try {
-    const deactivatedSupervisors = await User.find({ role: 'supervisor', isActive: false })
-      .select("userId firstName lastName contactNumber");
+    const deactivatedSupervisors = await User.find({ role: 'supervisor', isActive: false, isBlacklisted: false, isDeactivated: true })
+      .select("adminId firstName lastName contactNumber");
 
     const formattedDeactivatedSupervisors = deactivatedSupervisors.map((supervisor, index) => ({
       sNo: index + 1,
-      supervisorId: supervisor.userId,
+      adminId: supervisor.adminId,
       name: `${supervisor.firstName} ${supervisor.lastName}`,
       contact: supervisor.contactNumber,
       userId: supervisor._id,
@@ -299,10 +301,10 @@ export const getBlacklistedSupervisorsList = asyncHandler(async (req, res) => {
 
     const formattedBlacklistedSupervisors = blacklistedSupervisors.map((supervisor, index) => ({
       sNo: index + 1,
-      supervisorId: supervisor.adminId,
+      adminId: supervisor.adminId,
       name: `${supervisor.firstName} ${supervisor.lastName}`,
       contact: supervisor.contactNumber,
-      
+
     }));
 
     res.status(200).json(new ApiResponse(200, "Blacklisted supervisors fetched successfully", formattedBlacklistedSupervisors));
@@ -364,16 +366,19 @@ export const updateSupervisorStatus = asyncHandler(async (req, res) => {
     case "available":
       supervisor.isActive = true;
       supervisor.isBlacklisted = false;
+      supervisor.isDeactivated = false
       break;
 
     case "blacklisted":
       supervisor.isActive = false; // IMPORTANT: blacklist means deactivate from active
       supervisor.isBlacklisted = true;
+      supervisor.isDeactivated = false
       break;
 
     case "deactivated":
       supervisor.isActive = false;
-      supervisor.isBlacklisted = false; // Remove from blacklist when deactivating
+      supervisor.isBlacklisted = false;
+      supervisor.isDeactivated = true;
       break;
   }
 
@@ -384,6 +389,7 @@ export const updateSupervisorStatus = asyncHandler(async (req, res) => {
       adminId: supervisor.adminId,
       isActive: supervisor.isActive,
       isBlacklisted: supervisor.isBlacklisted,
+      isDeactivated: supervisor.isDeactivated,
     })
   );
 });
@@ -459,7 +465,7 @@ export const sentResetCode = asyncHandler(async (req, res) => {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     user.verificationCode = code;
     user.verificationCodeExpires = Date.now() + 10 * 60 * 1000;
-    
+
 
     // Save without validation (to only update the code fields)
     await user.save({ validateBeforeSave: false });
@@ -489,7 +495,6 @@ export const sentResetCode = asyncHandler(async (req, res) => {
 
 
 
-export {tokenBlacklist};
-
+export { tokenBlacklist };
 
 

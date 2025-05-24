@@ -21,7 +21,7 @@ export const getAvailableVehiclesCount = createAsyncThunk(
   'getAvailableVehiclesCount/vehicle', async (_, { rejectWithValue }) => {
     try {
       const res = await axios.get(`${BASE_URL}/available-vehicles`);
-      return { availableCount: res.data.message.availableVehicles };
+      return { availablecount: res.data.message.availableVehicles };
     }
     catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
@@ -191,7 +191,7 @@ const initialState = {
   status: 'idle',
   error: null,
   viewedVehicle: null,
-  availableCount: 0,
+  availablecount: 0,
   deactiveCount: 0,
   blacklistedCount: 0,
   totalCount: 0,
@@ -236,7 +236,7 @@ const vehicleSlice = createSlice(
         })
 
         .addCase(getAvailableVehiclesCount.fulfilled, (state, action) => {
-          state.availableCount = action.payload.availableCount;
+          state.availablecount = action.payload.availablecount;
         })
         .addCase(getDeactivatedVehiclesCount.fulfilled, (state, action) => {
           state.deactiveCount = action.payload.deactiveCount;

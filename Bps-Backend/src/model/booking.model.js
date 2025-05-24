@@ -207,6 +207,7 @@ const BookingSchema = new mongoose.Schema(
         return this.grandTotal;
       }
     },
+    customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
 
     // Status
     activeDelivery: {

@@ -103,17 +103,17 @@ export const updateBookingById = createAsyncThunk(
 )
 export const revenueList = createAsyncThunk(
   'revenueList/booking', async (_, thunkApi) => {
-  try {
-    const res = await axios.get(`${BASE_URL}/revenue-list`);
-    return {
-      totalRevenue: res.data.totalRevenue,
-      revenueList: res.data.data
+    try {
+      const res = await axios.get(`${BASE_URL}/revenue-list`);
+      return {
+        totalRevenue: res.data.totalRevenue,
+        revenueList: res.data.data
+      }
+    }
+    catch (err) {
+      return thunkApi.rejectWithValue(err.response?.data?.message || 'failed to view totalReveunue')
     }
   }
-  catch (err) {
-    return thunkApi.rejectWithValue(err.response?.data?.message || 'failed to view totalReveunue')
-  }
-}
 
 )
 export const cancelBooking = createAsyncThunk(

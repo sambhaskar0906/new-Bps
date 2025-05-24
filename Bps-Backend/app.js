@@ -67,4 +67,7 @@ app.use("/api/v2/ledger", customerLedgerRouter);
 import statesAndCitiesRouter from "./src/router/stateAndCity.router.js";
 app.use("/api/v2/state", statesAndCitiesRouter);
 
+import whatsappRoutes from './src/router/whatsappRoute.js';
+app.use('/api/whatsapp', whatsappRoutes);
+
 export { app }

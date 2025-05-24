@@ -7,16 +7,22 @@ import bookingReducer from '../features/booking/bookingSlice'
 import quotationReducer from '../features/quotation/quotationSlice'
 import vehicleReducer from '../features/vehicle/vehicleSlice'
 import deliveryReducer from '../features/delivery/deliverySlice'
+import UserReducer from '../features/user/userSlice'
+import ExpenseReducer from '../features/expense/expenseSlice'
+import CustomerLedgerReducer from '../features/customerLedger/customerLedgerSlice'
+
 export const store = configureStore({
   reducer: {
     stations: stationReducer,
     location: locationReducer,
     customers: customerReducer,
     drivers: driverReducer,
-    bookings:bookingReducer,
-    quotations:quotationReducer,
-    vehicles:vehicleReducer,
-    deliveries:deliveryReducer
-
+    bookings: bookingReducer,
+    quotations: quotationReducer,
+    vehicles: vehicleReducer,
+    deliveries: deliveryReducer,
+    users: UserReducer,
+    expenses: ExpenseReducer,
+    ledger: CustomerLedgerReducer,
   },
 });

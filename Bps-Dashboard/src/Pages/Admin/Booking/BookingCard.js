@@ -38,9 +38,8 @@ import {
 
 } from "@mui/icons-material";
 import AddIcon from "@mui/icons-material/Add";
-
 import { useDispatch, useSelector } from 'react-redux';
-import { bookingRequestCount, activeBookingCount, cancelledBookingCount, fetchBookingsByType, cancelBooking, deleteBooking } from '../../../features/booking/bookingSlice'
+import { bookingRequestCount, activeBookingCount, cancelledBookingCount, fetchBookingsByType, cancelBooking, deleteBooking, revenueList } from '../../../features/booking/bookingSlice'
 
 
 const createData = (id, orderby, date, namep, pickup, named, drop, contact) => ({
@@ -88,6 +87,16 @@ const headCells = [
   { id: "action", label: "Action", sortable: false },
 ];
 
+const revenueHeadCells = [
+  { id: "sno", label: "S.No", sortable: false },
+  { id: "bookingId", label: "Booking ID", sortable: true },
+  { id: "date", label: "Date", sortable: true },
+  { id: "pickup", label: "Pick Up", sortable: false },
+  { id: "drop", label: "Drop", sortable: false },
+  { id: "revenue", label: "Revenue (in Rupees)", sortable: false },
+  { id: "action", label: "Action", sortable: false },
+];
+
 const BookingCard = () => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -103,7 +112,8 @@ const BookingCard = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState(null);
   const dispatch = useDispatch();
-  const { list: bookingList, requestCount, activeDeliveriesCount, cancelledDeliveriesCount } = useSelector(state => state.bookings);
+  const { list: bookingList, requestCount, activeDeliveriesCount, cancelledDeliveriesCount, totalRevenue } = useSelector(state => state.bookings);
+
   useEffect(() => {
     if (bookingList && Array.isArray(bookingList)) {
       setBookings(bookingList);
@@ -120,11 +130,16 @@ const BookingCard = () => {
     navigate("/booking/new");
   };
 
-  const handleCardClick = (type, route) => {
+  const isRevenueCardActive = activeCard === 4;
 
+  const displayHeadCells = isRevenueCardActive ? revenueHeadCells : headCells;
+
+  const handleCardClick = (type, route, cardId) => {
+    setActiveCard(cardId);
     dispatch(fetchBookingsByType(type));
-    navigate(route);
+    if (route) navigate(route);
   };
+
 
   const handleRequestSort = (property) => {
     const isAsc = orderBy === property && order === "asc";
@@ -214,12 +229,12 @@ const BookingCard = () => {
     },
     {
       id: 4,
-      title: "0.00",
-      value: "Rs.",
+      value: totalRevenue,
       subtitle: "Total Revenue",
       duration: "100% (30 Days)",
-      route: "/totalrevenue",
+      title: "Revenue",
       icon: <AccountBalanceWalletIcon fontSize="large" />,
+      type: "revnue",
     },
   ];
 
@@ -262,7 +277,7 @@ const BookingCard = () => {
             sx={{ minWidth: 220, flex: 1, display: "flex", borderRadius: 2 }}
           >
             <Card
-              onClick={() => handleCardClick(card.type, card.route)}
+              onClick={() => handleCardClick(card.type, card.route, card.id)}
               sx={{
                 flex: 1,
                 cursor: "pointer",
@@ -353,7 +368,7 @@ const BookingCard = () => {
           <Table>
             <TableHead sx={{ backgroundColor: "#1565c0" }}>
               <TableRow>
-                {headCells.map((headCell) => (
+                {displayHeadCells.map((headCell) => (
                   <TableCell
                     key={headCell.id}
                     sx={{ fontWeight: "bold", color: "white" }}
@@ -375,60 +390,86 @@ const BookingCard = () => {
                 ))}
               </TableRow>
             </TableHead>
+
             <TableBody>
               {stableSort(filteredRows, getComparator(order, orderBy))
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row, index) => (
                   <TableRow key={row.bookingId} hover>
-                    <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-                    <TableCell>{row.orderBy}</TableCell>
-                    <TableCell>{row.date}</TableCell>
-                    <TableCell>{row.fromName}</TableCell>
-                    <TableCell>{row.pickup}</TableCell>
-                    <TableCell>{row.toName}</TableCell>
-                    <TableCell>{row.drop}</TableCell>
-                    <TableCell>{row.contact}</TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", gap: 1 }}>
-                        <IconButton
-                          size="small"
-                          color="info"
-                          onClick={() => handleView(row.bookingId)}
-                          title="View"
-                        >
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleEdit(row.bookingId)}
-                          title="Edit"
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleCancel(row.bookingId)}
-                          title="CancelScheduleSend"
-                        >
-                          <CancelScheduleSendIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDeleteClick(row.bookingId)}
-                          title="Delete"
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    </TableCell>
+                    {isRevenueCardActive ? (
+                      <>
+                        <TableCell>{page * rowsPerPage + index + 1}</TableCell>
+                        <TableCell>{row.bookingId}</TableCell>
+                        <TableCell>{row.date}</TableCell>
+                        <TableCell>{row.pickup}</TableCell>
+                        <TableCell>{row.drop}</TableCell>
+                        <TableCell>{row.revenue ?? "-"}</TableCell>
+                        <TableCell>
+                          <Box sx={{ display: "flex", gap: 1 }}>
+                            <IconButton
+                              size="small"
+                              color="info"
+                              onClick={() => handleView(row.bookingId)}
+                              title="View"
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                      </>
+                    ) : (
+                      <>
+                        <TableCell>{page * rowsPerPage + index + 1}</TableCell>
+                        <TableCell>{row.orderBy}</TableCell>
+                        <TableCell>{row.date}</TableCell>
+                        <TableCell>{row.fromName}</TableCell>
+                        <TableCell>{row.pickup}</TableCell>
+                        <TableCell>{row.toName}</TableCell>
+                        <TableCell>{row.drop}</TableCell>
+                        <TableCell>{row.contact}</TableCell>
+                        <TableCell>
+                          <Box sx={{ display: "flex", gap: 1 }}>
+                            <IconButton
+                              size="small"
+                              color="info"
+                              onClick={() => handleView(row.bookingId)}
+                              title="View"
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => handleEdit(row.bookingId)}
+                              title="Edit"
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => handleCancel(row.bookingId)}
+                              title="CancelScheduleSend"
+                            >
+                              <CancelScheduleSendIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDeleteClick(row.bookingId)}
+                              title="Delete"
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                      </>
+                    )}
                   </TableRow>
                 ))}
               {emptyRows > 0 && (
                 <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={9} />
+                  <TableCell colSpan={displayHeadCells.length} />
                 </TableRow>
               )}
             </TableBody>

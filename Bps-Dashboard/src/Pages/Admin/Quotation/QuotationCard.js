@@ -185,7 +185,6 @@ const QuotationCard = () => {
       value: "Rs.",
       subtitle: "Total Revenue",
       duration: "100% (30 Days)",
-      route: "/totalrevenu",
       icon: <AccountBalanceWalletIcon fontSize="large" />,
     },
   ];
@@ -323,10 +322,8 @@ const QuotationCard = () => {
                     <TableCell>{page * rowsPerPage + index + 1}</TableCell>
                     <TableCell>{row.order}</TableCell>
                     <TableCell>{row.Date}</TableCell>
-                    {/* <TableCell>{row.quotationDate?.slice(0, 10)}</TableCell> */}
                     <TableCell>{row.Name}</TableCell>
                     <TableCell>{row["Pick up"]}</TableCell>
-                    {/* <TableCell>{row.receiverName}</TableCell> */}
                     <TableCell>{row["Name (Drop)"]}</TableCell>
                     <TableCell>{row.Drop}</TableCell>
                     <TableCell>{row.Contact}</TableCell>

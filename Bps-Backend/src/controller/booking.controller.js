@@ -200,9 +200,6 @@ export const sendBookingEmail = async (email, booking) => {
 };
 
 
-
-
-
 export const updateBooking = async (req, res) => {
   console.log("Req ", req.body);
   try {

@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginUser } from '../features/loginSlice';
+import { loginUser, fetchUserProfile } from '../features/loginSlice';
 import { useNavigate } from 'react-router-dom';
 import loginImage from '../assets/BoxMan.svg';
 
@@ -25,12 +25,6 @@ const Login = () => {
 
     const { isAuthenticated, loading, error } = useSelector((state) => state.auth);
 
-    // useEffect(() => {
-    //     if (isAuthenticated) {
-    //         navigate('/'); // redirect to homepage/dashboard
-    //     }
-    // }, [isAuthenticated, navigate]);
-
     const handleTogglePassword = () => setShowPassword(!showPassword);
 
     const handleChange = (e) => {
@@ -40,14 +34,32 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await dispatch(loginUser(formData)).unwrap();
 
-            // token ko URL me bhejo redirect karte waqt
-            window.location.href = `http://localhost:3000/?token=${response.token}`;
+            const loginResponse = await dispatch(loginUser(formData)).unwrap();
+            const token = loginResponse.message.token;
+            localStorage.setItem("authToken", token);
+
+            const profileResponse = await dispatch(fetchUserProfile(token)).unwrap();
+            const role = profileResponse.message?.role;
+
+            console.log('✅ Role received from profile:', role);
+
+            if (typeof role === 'string' && role.length > 0) {
+                localStorage.setItem("userRole", role);
+            } else {
+                console.warn("⚠️ Role is not a valid string.");
+            }
+
+            setTimeout(() => {
+                window.location.href = `http://localhost:3000/?token=${token}&role=${role}`;
+            }, 100); // 100ms delay
+
         } catch (err) {
-            console.error('Login failed', err);
+            console.error('❌ Login or Profile fetch failed', err);
         }
     };
+
+
 
     return (
         <Box

@@ -19,6 +19,7 @@ const AppBarHeader = () => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [user, setUser] = useState(null);
     const open = Boolean(anchorEl);
+    const userRole = localStorage.getItem('userRole');
 
     useEffect(() => {
         const token = localStorage.getItem('authToken');
@@ -58,7 +59,7 @@ const AppBarHeader = () => {
         <AppBar position="static" sx={{ zIndex: 1201, bgcolor: '#1976d2' }}>
             <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Typography variant="h6" noWrap>
-                    Admin Dashboard
+                    {userRole} Dashboard
                 </Typography>
 
                 <Box>

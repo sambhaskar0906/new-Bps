@@ -26,6 +26,7 @@ const Sidebar = ({ children }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [mobileOpen, setMobileOpen] = useState(false);
+    const userRole = localStorage.getItem('userRole');
 
     const toggleDrawer = () => setMobileOpen(!mobileOpen);
 
@@ -38,30 +39,32 @@ const Sidebar = ({ children }) => {
             </Box>
             <Divider />
             <List>
-                {sidebarItems.map((item, index) => {
-                    const isActive = location.pathname === item.route;
-                    return (
-                        <ListItem key={index} disablePadding>
-                            <ListItemButton
-                                component={Link}
-                                to={item.route}
-                                sx={{
-                                    backgroundColor: isActive ? 'primary.main' : 'transparent',
-                                    color: isActive ? 'white' : 'black',
-                                    '&:hover': {
-                                        backgroundColor: isActive ? 'primary.dark' : '#e0e0e0',
-                                    },
-                                }}
-                                onClick={() => isMobile && toggleDrawer()}
-                            >
-                                <ListItemIcon sx={{ color: isActive ? 'white' : 'black', minWidth: 40 }}>
-                                    {item.icon}
-                                </ListItemIcon>
-                                <ListItemText primary={item.label} />
-                            </ListItemButton>
-                        </ListItem>
-                    );
-                })}
+                {sidebarItems
+                    .filter(item => !(userRole === 'supervisor' && item.label === 'Manage User'))
+                    .map((item, index) => {
+                        const isActive = location.pathname === item.route;
+                        return (
+                            <ListItem key={index} disablePadding>
+                                <ListItemButton
+                                    component={Link}
+                                    to={item.route}
+                                    sx={{
+                                        backgroundColor: isActive ? 'primary.main' : 'transparent',
+                                        color: isActive ? 'white' : 'black',
+                                        '&:hover': {
+                                            backgroundColor: isActive ? 'primary.dark' : '#e0e0e0',
+                                        },
+                                    }}
+                                    onClick={() => isMobile && toggleDrawer()}
+                                >
+                                    <ListItemIcon sx={{ color: isActive ? 'white' : 'black', minWidth: 40 }}>
+                                        {item.icon}
+                                    </ListItemIcon>
+                                    <ListItemText primary={item.label} />
+                                </ListItemButton>
+                            </ListItem>
+                        );
+                    })}
             </List>
         </Box>
     );
@@ -76,7 +79,7 @@ const Sidebar = ({ children }) => {
                             <MenuIcon />
                         </IconButton>
                         <Typography variant="h6" noWrap>
-                            Admin Dashboard
+                            {userRole} Dashboard
                         </Typography>
                     </Toolbar>
                 </AppBar>

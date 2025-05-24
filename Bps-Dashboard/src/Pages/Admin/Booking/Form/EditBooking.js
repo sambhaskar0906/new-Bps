@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from "react";
+import React, { useEffect, useState } from "react";
 import * as Yup from "yup";
 import { Formik, Form, FieldArray } from "formik";
 import {
@@ -15,11 +15,11 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from "@mui/icons-material/Add";
 import { useNavigate, useParams } from "react-router-dom";
-import {useDispatch,useSelector} from 'react-redux'
-import { viewBookingById, updateBookingById} from "../../../../features/booking/bookingSlice";
-import {fetchStations} from '../../../../features/stations/stationSlice'
+import { useDispatch, useSelector } from 'react-redux'
+import { viewBookingById, updateBookingById } from "../../../../features/booking/bookingSlice";
+import { fetchStations } from '../../../../features/stations/stationSlice'
 import { fetchStates, fetchCities, clearCities } from '../../../../features/Location/locationSlice';
-const toPay = ['pay', 'paid','none'];
+const toPay = ['pay', 'paid', 'none'];
 
 const initialValues = {
   startStation: "",
@@ -100,7 +100,7 @@ const validationSchema = Yup.object().shape({
   firstName: Yup.string().required("First Name is required"),
   middleName: Yup.string(),
   lastName: Yup.string().required("Last Name is required"),
-   mobile: Yup.string()
+  mobile: Yup.string()
     .matches(/^\d{10}$/, "Contact Number must be 10 digits")
     .required("Contact Number is required"),
   email: Yup.string().email("Invalid email").required("Email is required"),
@@ -130,7 +130,7 @@ const validationSchema = Yup.object().shape({
       vppAmount: Yup.number()
         .typeError("VPP Amount must be a number")
         .min(0, "Cannot be negative"),
-      
+
       weight: Yup.number()
         .typeError("Weight must be a number")
         .min(0, "Cannot be negative"),
@@ -165,95 +165,94 @@ const validationSchema = Yup.object().shape({
 
 const EditBooking = () => {
   const [senderCities, setSenderCities] = React.useState([]);
-    const [receiverCities, setReceiverCities] = React.useState([]);
-  const {bookingId} = useParams();
-  const navigate=useNavigate();
+  const [receiverCities, setReceiverCities] = React.useState([]);
+  const { bookingId } = useParams();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { list: stations } = useSelector((state) => state.stations);
-   const { loading, error, viewedBooking } = useSelector(state => state.bookings);
-   const { states, cities } = useSelector((state) => state.location);
-   useEffect(()=>{
+  const { loading, error, viewedBooking } = useSelector(state => state.bookings);
+  const { states, cities } = useSelector((state) => state.location);
+  useEffect(() => {
     dispatch(fetchStations());
     dispatch(fetchStates());
-   },[dispatch])
-    useEffect(() => {
-           if (bookingId) {
-               dispatch(viewBookingById(bookingId));
-           }
-       }, [bookingId, dispatch]);
-   
-       useEffect(() => {
-          
-       }, [viewedBooking]);
+  }, [dispatch])
+  useEffect(() => {
+    if (bookingId) {
+      dispatch(viewBookingById(bookingId));
+    }
+  }, [bookingId, dispatch]);
+
+  useEffect(() => {
+
+  }, [viewedBooking]);
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Formik
         initialValues={{
-                    ...initialValues,
-                    ...viewedBooking,
-                    bookingDate: viewedBooking?.bookingDate ? new Date(viewedBooking.bookingDate) : new Date(),
-                   deliveryDate: viewedBooking?.deliveryDate ? new Date(viewedBooking.deliveryDate) : new Date(),
-                  startStation: viewedBooking?.startStation?.stationName || "",
-                  endStation: viewedBooking?.endStation?.stationName || "",
-                }}
+          ...initialValues,
+          ...viewedBooking,
+          bookingDate: viewedBooking?.bookingDate ? new Date(viewedBooking.bookingDate) : new Date(),
+          deliveryDate: viewedBooking?.deliveryDate ? new Date(viewedBooking.deliveryDate) : new Date(),
+          startStation: viewedBooking?.startStation?.stationName || "",
+          endStation: viewedBooking?.endStation?.stationName || "",
+        }}
         validationSchema={validationSchema}
         onSubmit={(values) => {
-  dispatch(updateBookingById({ bookingId, data: values }))
-    .unwrap()
-    .then(() => {
-      // Success
-      alert("Booking updated successfully!");
-      navigate("/booking"); // or wherever needed
-    })
-    .catch((error) => {
-      console.error("Failed to update", error);
-    });
-}}
+          dispatch(updateBookingById({ bookingId, data: values }))
+            .unwrap()
+            .then(() => {
+              alert("Booking updated successfully!");
+              navigate("/booking");
+            })
+            .catch((error) => {
+              console.error("Failed to update", error);
+            });
+        }}
 
         enableReinitialize
       >
         {({ values, handleChange, setFieldValue }) => (
           <Form>
             <EffectSyncCities values={values} dispatch={dispatch} setSenderCities={setSenderCities}
-  setReceiverCities={setReceiverCities}/>
-    <EffectSyncTotals values={values} setFieldValue={setFieldValue} />
+              setReceiverCities={setReceiverCities} />
+            <EffectSyncTotals values={values} setFieldValue={setFieldValue} />
             <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                                  <TextField
-                                    select
-                                    fullWidth
-                                    label="Start Station"
-                                    name="startStation"
-                                    value={values.startStation}
-                                    onChange={handleChange}
-                                  >
-                                    {stations.map((station) => (
-                                    <MenuItem key={station.stationId || station.sNo} value={station.stationName}>
-                                            {station.stationName}
-                                     </MenuItem>
-                                      ))}
-                
-                                  </TextField>
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6 }}>
-                                  <TextField
-                                    select
-                                    fullWidth
-                                    label="Destination Station"
-                                    name="endStation"
-                                    value={values.endStation}
-                                    onChange={handleChange}
-                                  >
-                                    {stations.map((station) => (
-                                    <MenuItem key={station.stationId || station.sNo} value={station.stationName}>
-                                            {station.stationName}
-                                     </MenuItem>
-                                      ))}
-                                  </TextField>
-                                </Grid>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Start Station"
+                    name="startStation"
+                    value={values.startStation}
+                    onChange={handleChange}
+                  >
+                    {stations.map((station) => (
+                      <MenuItem key={station.stationId || station.sNo} value={station.stationName}>
+                        {station.stationName}
+                      </MenuItem>
+                    ))}
 
-                <Grid size ={{xs:12, sm:6}}>
+                  </TextField>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Destination Station"
+                    name="endStation"
+                    value={values.endStation}
+                    onChange={handleChange}
+                  >
+                    {stations.map((station) => (
+                      <MenuItem key={station.stationId || station.sNo} value={station.stationName}>
+                        {station.stationName}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <DatePicker
                     label="Booking Date"
                     value={values.bookingDate}
@@ -263,7 +262,7 @@ const EditBooking = () => {
                     )}
                   />
                 </Grid>
-                <Grid size ={{xs:12, sm:6}}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <DatePicker
                     label="Proposed Delivery Date"
                     value={values.deliveryDate}
@@ -274,7 +273,7 @@ const EditBooking = () => {
                   />
                 </Grid>
 
-                <Grid size ={{xs:12, sm:9}}>
+                <Grid size={{ xs: 12, sm: 9 }}>
                   <Typography fontWeight="bold">
                     Customer Name/Number
                   </Typography>
@@ -294,7 +293,7 @@ const EditBooking = () => {
                   />
                 </Grid>
                 <Grid
-                  size ={{xs:12, sm:3}}
+                  size={{ xs: 12, sm: 3 }}
                   sx={{ display: "flex", alignItems: "flex-end" }}
                 >
                   <Button
@@ -307,7 +306,7 @@ const EditBooking = () => {
                   </Button>
                 </Grid>
 
-                <Grid size ={{xs:12, sm:4}}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     fullWidth
                     label="First Name"
@@ -316,7 +315,7 @@ const EditBooking = () => {
                     onChange={handleChange}
                   />
                 </Grid>
-                <Grid size ={{xs:12, sm:4}}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     fullWidth
                     label="Middle Name"
@@ -325,7 +324,7 @@ const EditBooking = () => {
                     onChange={handleChange}
                   />
                 </Grid>
-                <Grid size ={{xs:12, sm:4}}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     fullWidth
                     label="Last Name"
@@ -335,7 +334,7 @@ const EditBooking = () => {
                   />
                 </Grid>
 
-                <Grid size ={{xs:12, sm:6}}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="Contact Number"
@@ -344,7 +343,7 @@ const EditBooking = () => {
                     onChange={handleChange}
                   />
                 </Grid>
-                <Grid size ={{xs:12, sm:6}}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="Email"
@@ -355,10 +354,10 @@ const EditBooking = () => {
                   />
                 </Grid>
 
-                <Grid size ={{xs:12}}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="h6">From (Address)</Typography>
                 </Grid>
-                <Grid size ={{xs:12, sm:6}}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="Name"
@@ -367,7 +366,7 @@ const EditBooking = () => {
                     onChange={handleChange}
                   />
                 </Grid>
-                <Grid size ={{xs:12, sm:6}}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="GST Number"
@@ -376,7 +375,7 @@ const EditBooking = () => {
                     onChange={handleChange}
                   />
                 </Grid>
-                <Grid size ={{xs:12, sm:6}}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="Locality / Street"
@@ -386,38 +385,38 @@ const EditBooking = () => {
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                                  <TextField
-                                    select
-                                    fullWidth
-                                    label="State"
-                                    name="fromState"
-                                    value={values.fromState}
-                                    onChange={handleChange}
-                                  >
-                                    {states.map((s) => (
-                                      <MenuItem key={s} value={s}>
-                                        {s}
-                                      </MenuItem>
-                                    ))}
-                                  </TextField>
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6 }}>
-                                  <TextField
-                                    select
-                                    fullWidth
-                                    label="City"
-                                    name="fromCity"
-                                    value={values.fromCity}
-                                    onChange={handleChange}
-                                  >
-                                    {senderCities.map((c) => (
-                                      <MenuItem key={c} value={c}>
-                                        {c}
-                                      </MenuItem>
-                                    ))}
-                                  </TextField>
-                                </Grid>
-                <Grid size ={{xs:12, sm:6}}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="State"
+                    name="fromState"
+                    value={values.fromState}
+                    onChange={handleChange}
+                  >
+                    {states.map((s) => (
+                      <MenuItem key={s} value={s}>
+                        {s}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="City"
+                    name="fromCity"
+                    value={values.fromCity}
+                    onChange={handleChange}
+                  >
+                    {senderCities.map((c) => (
+                      <MenuItem key={c} value={c}>
+                        {c}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="Pin Code"
@@ -427,10 +426,10 @@ const EditBooking = () => {
                   />
                 </Grid>
 
-                <Grid size ={{xs:12}}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="h6">To (Address)</Typography>
                 </Grid>
-                <Grid size ={{xs:12, sm:6}}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="Name"
@@ -439,7 +438,7 @@ const EditBooking = () => {
                     onChange={handleChange}
                   />
                 </Grid>
-                <Grid size ={{xs:12, sm:6}}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="GST Number"
@@ -448,7 +447,7 @@ const EditBooking = () => {
                     onChange={handleChange}
                   />
                 </Grid>
-                <Grid size ={{xs:12, sm:6}}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="Locality / Street"
@@ -458,38 +457,38 @@ const EditBooking = () => {
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                                  <TextField
-                                    select
-                                    fullWidth
-                                    label="State"
-                                    name="toState"
-                                    value={values.toState}
-                                    onChange={handleChange}
-                                  >
-                                    {states.map((s) => (
-                                      <MenuItem key={s} value={s}>
-                                        {s}
-                                      </MenuItem>
-                                    ))}
-                                  </TextField>
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6 }}>
-                                  <TextField
-                                    select
-                                    fullWidth
-                                    label="City"
-                                    name="toCity"
-                                    value={values.toCity}
-                                    onChange={handleChange}
-                                  >
-                                    {receiverCities.map((c) => (
-                                      <MenuItem key={c} value={c}>
-                                        {c}
-                                      </MenuItem>
-                                    ))}
-                                  </TextField>
-                                </Grid>
-                <Grid size ={{xs:12, sm:6}}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="State"
+                    name="toState"
+                    value={values.toState}
+                    onChange={handleChange}
+                  >
+                    {states.map((s) => (
+                      <MenuItem key={s} value={s}>
+                        {s}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="City"
+                    name="toCity"
+                    value={values.toCity}
+                    onChange={handleChange}
+                  >
+                    {receiverCities.map((c) => (
+                      <MenuItem key={c} value={c}>
+                        {c}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     label="Pin Code"
@@ -499,7 +498,7 @@ const EditBooking = () => {
                   />
                 </Grid>
 
-                <Grid size ={{xs:12}}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="h6">Product Details</Typography>
                 </Grid>
                 <FieldArray name="items">
@@ -513,10 +512,10 @@ const EditBooking = () => {
                           alignItems="center"
                           sx={{ mb: 2 }}
                         >
-                          <Grid size ={{xs:0.5}}>
+                          <Grid size={{ xs: 0.5 }}>
                             <Typography>{index + 1}.</Typography>
                           </Grid>
-                          <Grid size ={{xs:3, sm:3, md:1.4}}>
+                          <Grid size={{ xs: 3, sm: 3, md: 1.4 }}>
                             <TextField
                               fullWidth
                               size="small"
@@ -526,7 +525,7 @@ const EditBooking = () => {
                               onChange={handleChange}
                             />
                           </Grid>
-                          <Grid size ={{xs:3, sm:3, md:1.4}}>
+                          <Grid size={{ xs: 3, sm: 3, md: 1.4 }}>
                             <TextField
                               fullWidth
                               size="small"
@@ -536,7 +535,7 @@ const EditBooking = () => {
                               onChange={handleChange}
                             />
                           </Grid>
-                          <Grid size ={{xs:3, sm:3, md:1.4}}>
+                          <Grid size={{ xs: 3, sm: 3, md: 1.4 }}>
                             <TextField
                               fullWidth
                               size="small"
@@ -546,7 +545,7 @@ const EditBooking = () => {
                               onChange={handleChange}
                             />
                           </Grid>
-                          <Grid size ={{xs:3, sm:3, md:1.4}}>
+                          <Grid size={{ xs: 3, sm: 3, md: 1.4 }}>
                             <TextField
                               fullWidth
                               size="small"
@@ -556,7 +555,7 @@ const EditBooking = () => {
                               onChange={handleChange}
                             />
                           </Grid>
-                          <Grid size ={{xs:3, sm:3, md:1.4}}>
+                          <Grid size={{ xs: 3, sm: 3, md: 1.4 }}>
                             <TextField
                               fullWidth
                               size="small"
@@ -566,7 +565,7 @@ const EditBooking = () => {
                               onChange={handleChange}
                             />
                           </Grid>
-                          <Grid size ={{xs:3, sm:3, md:1.4}}>
+                          <Grid size={{ xs: 3, sm: 3, md: 1.4 }}>
                             <TextField
                               fullWidth
                               size="small"
@@ -576,7 +575,7 @@ const EditBooking = () => {
                               onChange={handleChange}
                             />
                           </Grid>
-                          <Grid size ={{xs:3, sm:3, md:1.5}}>
+                          <Grid size={{ xs: 3, sm: 3, md: 1.5 }}>
                             <TextField
                               select
                               fullWidth
@@ -593,7 +592,7 @@ const EditBooking = () => {
                               ))}
                             </TextField>
                           </Grid>
-                          <Grid size ={{xs:3, sm:3, md:1}}>
+                          <Grid size={{ xs: 3, sm: 3, md: 1 }}>
                             <Button
                               color="error"
                               onClick={() => remove(index)}
@@ -606,7 +605,7 @@ const EditBooking = () => {
                         </Grid>
                       ))}
 
-                      <Grid size ={{xs:12}}>
+                      <Grid size={{ xs: 12 }}>
                         <Button
                           fullWidth
                           variant="contained"
@@ -629,7 +628,7 @@ const EditBooking = () => {
                   )}
                 </FieldArray>
 
-                <Grid size ={{xs:12, md:9}}>
+                <Grid size={{ xs: 12, md: 9 }}>
                   <TextField
                     name="addComment"
                     label="Additional Comments"
@@ -642,29 +641,29 @@ const EditBooking = () => {
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
-                                  <Grid container spacing={2}>
-                                    {totalFields.map(({ name, label, readOnly }) => (
-                    <Grid item xs={6} key={name}>
-                      <TextField
-                        name={name}
-                        label={label}
-                        value={values[name]}
-                        onChange={handleChange}
-                        fullWidth
-                        size="small"
-                        InputProps={{
-                          readOnly: readOnly,
-                          ...(label.includes("%") && {
-                            endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                          }),
-                        }}
-                      />
-                    </Grid>
-                                    ))}
-                                  </Grid>
-                                </Grid>
+                  <Grid container spacing={2}>
+                    {totalFields.map(({ name, label, readOnly }) => (
+                      <Grid item xs={6} key={name}>
+                        <TextField
+                          name={name}
+                          label={label}
+                          value={values[name]}
+                          onChange={handleChange}
+                          fullWidth
+                          size="small"
+                          InputProps={{
+                            readOnly: readOnly,
+                            ...(label.includes("%") && {
+                              endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                            }),
+                          }}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Grid>
 
-                <Grid size ={{xs:12}}>
+                <Grid size={{ xs: 12 }}>
                   <Button
                     type="submit"
                     fullWidth
