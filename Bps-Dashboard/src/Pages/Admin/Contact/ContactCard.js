@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Button,
@@ -21,8 +21,19 @@ import BrokenImageIcon from '@mui/icons-material/BrokenImage';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import {
+    createContact,
+    getAllContact,
+    updateContact,
+    deleteContact,
+    selectContactList
+} from '../../../features/contact/contactSlice';
+import { useDispatch, useSelector } from 'react-redux';
 
 const ContactCard = () => {
+    const dispatch = useDispatch();
+
+    // Form state for add/edit/view
     const [formData, setFormData] = useState({
         name: '',
         contactNumber: '',
@@ -30,13 +41,21 @@ const ContactCard = () => {
         address: '',
     });
 
-    const [contacts, setContacts] = useState([]);
+    // Local contacts state from Redux store
+    const contacts = useSelector(selectContactList);
+
     const [searchTerm, setSearchTerm] = useState('');
-    const [editIndex, setEditIndex] = useState(null);
+    const [editIndex, setEditIndex] = useState(null); // index in the contacts array for editing
     const [page, setPage] = useState(1);
     const [isViewMode, setIsViewMode] = useState(false);
     const rowsPerPage = 5;
 
+    // Load contacts on mount
+    useEffect(() => {
+        dispatch(getAllContact());
+    }, [dispatch]);
+
+    // Handle input changes in form
     const handleChange = (e) => {
         if (!isViewMode) {
             setFormData((prev) => ({
@@ -46,53 +65,66 @@ const ContactCard = () => {
         }
     };
 
-    const handleAddContact = () => {
-        if (!formData.name || !formData.contactNumber) return;
-
+    // Add or update contact handler
+    const handleAddOrUpdateContact = async () => {
         if (editIndex !== null) {
-            const updatedContacts = [...contacts];
-            updatedContacts[editIndex] = formData;
-            setContacts(updatedContacts);
-            setEditIndex(null);
+            // Update contact
+            const contactToUpdate = contacts[editIndex];
+            const updatedData = { ...contactToUpdate, ...formData };
+            await dispatch(updateContact(updatedData));
         } else {
-            setContacts((prev) => [...prev, formData]);
+            // Create contact
+            await dispatch(createContact(formData));
+            dispatch(getAllContact());
         }
-
+        // Reset form and state
         setFormData({ name: '', contactNumber: '', email: '', address: '' });
+        setEditIndex(null);
         setIsViewMode(false);
+        setPage(1); // reset page to 1 after update/add
     };
 
-    const handleDelete = (index) => {
-        setContacts((prev) => prev.filter((_, i) => i !== index));
-        if (editIndex === index) {
-            setEditIndex(null);
-            setIsViewMode(false);
-            setFormData({ name: '', contactNumber: '', email: '', address: '' });
+    // Delete contact by index
+    const handleDelete = async (index) => {
+        const contactToDelete = contacts[index];
+        if (
+            window.confirm(`Are you sure you want to delete contact: ${contactToDelete.name}?`)
+        ) {
+            await dispatch(deleteContact(contactToDelete.contactNumber));
+            // If we were editing or viewing this contact, reset form
+            if (editIndex === index || isViewMode) {
+                setFormData({ name: '', contactNumber: '', email: '', address: '' });
+                setEditIndex(null);
+                setIsViewMode(false);
+            }
         }
     };
 
+    // Edit contact by index
     const handleEdit = (index) => {
         setFormData(contacts[index]);
         setEditIndex(index);
         setIsViewMode(false);
     };
 
+    // View contact (read-only)
     const handleView = (contact) => {
         setFormData(contact);
         setIsViewMode(true);
+        setEditIndex(null);
     };
 
+    // Cancel add/edit/view
     const handleCancel = () => {
         setFormData({ name: '', contactNumber: '', email: '', address: '' });
         setEditIndex(null);
         setIsViewMode(false);
     };
 
+    // Filter and paginate contacts
     const filteredContacts = contacts.filter((contact) =>
         contact.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
-    // Pagination logic
     const count = Math.ceil(filteredContacts.length / rowsPerPage);
     const paginatedContacts = filteredContacts.slice(
         (page - 1) * rowsPerPage,
@@ -105,8 +137,11 @@ const ContactCard = () => {
 
     return (
         <Box p={3}>
-            <Typography variant="h6" mb={2}>Contact List</Typography>
+            <Typography variant="h6" mb={2}>
+                Contact List
+            </Typography>
 
+            {/* Contact form */}
             <Grid container spacing={2} mb={2}>
                 <Grid item xs={12} sm={3}>
                     <TextField
@@ -154,26 +189,25 @@ const ContactCard = () => {
                 </Grid>
             </Grid>
 
+            {/* Buttons and search */}
             <Grid container justifyContent="space-between" alignItems="center" mb={2}>
                 <Box>
                     <Button
                         variant="contained"
-                        onClick={handleAddContact}
+                        onClick={handleAddOrUpdateContact}
                         sx={{ backgroundColor: '#004C99', mr: 2 }}
-                        disabled={isViewMode}
+                        disabled={isViewMode || !formData.name || !formData.contactNumber}
                     >
                         {editIndex !== null ? 'Update Contact' : '+ Contact'}
                     </Button>
+
                     {(isViewMode || editIndex !== null) && (
-                        <Button
-                            variant="outlined"
-                            onClick={handleCancel}
-                            color="error"
-                        >
+                        <Button variant="outlined" onClick={handleCancel} color="error">
                             Cancel
                         </Button>
                     )}
                 </Box>
+
                 <TextField
                     size="small"
                     placeholder="Search"
@@ -191,6 +225,7 @@ const ContactCard = () => {
                 />
             </Grid>
 
+            {/* Contact table */}
             <TableContainer component={Paper}>
                 <Table>
                     <TableHead sx={{ backgroundColor: '#004C99' }}>
@@ -203,20 +238,18 @@ const ContactCard = () => {
                             <TableCell sx={{ color: '#fff' }}>Action</TableCell>
                         </TableRow>
                     </TableHead>
+
                     <TableBody>
                         {paginatedContacts.length > 0 ? (
                             paginatedContacts.map((contact, index) => (
-                                <TableRow key={index}>
+                                <TableRow key={contact._id || index}>
                                     <TableCell>{(page - 1) * rowsPerPage + index + 1}</TableCell>
                                     <TableCell>{contact.name}</TableCell>
                                     <TableCell>{contact.contactNumber}</TableCell>
                                     <TableCell>{contact.email}</TableCell>
                                     <TableCell>{contact.address}</TableCell>
                                     <TableCell>
-                                        <IconButton
-                                            onClick={() => handleView(contact)}
-                                            color="primary"
-                                        >
+                                        <IconButton onClick={() => handleView(contact)} color="primary">
                                             <VisibilityIcon />
                                         </IconButton>
                                         <IconButton
@@ -248,6 +281,7 @@ const ContactCard = () => {
                 </Table>
             </TableContainer>
 
+            {/* Pagination */}
             {filteredContacts.length > 0 && (
                 <Box display="flex" justifyContent="center" mt={2}>
                     <Pagination

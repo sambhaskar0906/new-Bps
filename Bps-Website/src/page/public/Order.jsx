@@ -50,7 +50,7 @@ const initialValues = {
       refNo: "",
       insurance: "",
       vppAmount: "",
-      toPayPaid: "",
+      toPay: "",
       weight: "",
       amount: "",
     },
@@ -436,8 +436,8 @@ const BookingForm = () => {
                               fullWidth
                               size="small"
                               label="To Pay/Paid"
-                              name={`items[${index}].toPayPaid`}
-                              value={values.items[index].toPayPaid}
+                              name={`items[${index}].toPay`}
+                              value={values.items[index].toPay}
                               onChange={handleChange}
                             >
                               {toPay.map((p) => (
@@ -470,7 +470,7 @@ const BookingForm = () => {
                               refNo: "",
                               insurance: "",
                               vppAmount: "",
-                              toPayPaid: "",
+                              toPay: "",
                               weight: "",
                               amount: "",
                             })
