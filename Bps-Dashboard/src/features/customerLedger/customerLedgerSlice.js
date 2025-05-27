@@ -16,11 +16,12 @@ export const allLedger = createAsyncThunk('ledger/all', async (_, thunkAPI) => {
 /** Preview invoices (Booking or Quotation) by customer and date range */
 export const previewInvoices = createAsyncThunk(
     'ledger/previewInvoices',
-    async (filterData, thunkAPI) => {
+    async (payload, thunkAPI) => {
         try {
-            const res = await axios.post(`${BASE_URL}/preview`, filterData);
+            const res = await axios.post(`${BASE_URL}/preview`, payload);
             return res.data;
         } catch (err) {
+            console.error("Preview Invoices Error", err.response?.data || err.message);
             return thunkAPI.rejectWithValue(err.response?.data?.message || 'Failed to preview invoices');
         }
     }

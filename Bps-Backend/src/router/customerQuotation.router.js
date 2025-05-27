@@ -19,36 +19,36 @@ import {
 
 } from "../controller/customerQuotation.controller.js";
 import { parseFormData } from "../middleware/multerParser.middleware.js";
-
+import { verifyJwt } from '../middleware/auth.middleware.js'
 const router = express.Router();
 
 // Route to create a new quotation with form data (including files)
-router.post("/", parseFormData, createQuotation);
+router.post("/", verifyJwt, createQuotation);
 
 // Route to get all quotations
 router.get("/", getAllQuotations);
 
 // Route to get total booking requests
-router.get("/total-booking-requests", getTotalBookingRequests);
+router.get("/total-booking-requests", verifyJwt, getTotalBookingRequests);
 
 // Route to get total active deliveries
-router.get("/total-active-deliveries", getTotalActiveDeliveries);
+router.get("/total-active-deliveries", verifyJwt, getTotalActiveDeliveries);
 
 // Route to get total cancelled quotations
-router.get("/total-cancelled", getTotalCancelled);
+router.get("/total-cancelled", verifyJwt, getTotalCancelled);
 
 // Route to get total revenue
-router.get("/total-revenue", getTotalRevenue);
+router.get("/total-revenue", verifyJwt, getTotalRevenue);
 
-router.get("/active-list", getActiveList);
+router.get("/active-list", verifyJwt, getActiveList);
 
-router.get("/cancelled-list", getCancelledList);
+router.get("/cancelled-list", verifyJwt, getCancelledList);
 
-router.get("/revenue-list", getRevenue)
+router.get("/revenue-list", verifyJwt, getRevenue)
 
 router.get("/send-Booking-Email", sendBookingEmail)
 
-router.get("/booking-request-list", RequestBookingList)
+router.get("/booking-request-list", verifyJwt, RequestBookingList)
 
 router.patch("/status/:bookingId", updateQuotationStatus);
 // Route to get a single quotation by its ID

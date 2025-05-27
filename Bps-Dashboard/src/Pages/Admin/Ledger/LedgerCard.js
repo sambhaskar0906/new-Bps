@@ -5,22 +5,22 @@ import {
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
-
+import { useDispatch, useSelector } from 'react-redux';
+import { previewInvoices, generateInvoices } from '../../../features/customerLedger/customerLedgerSlice';
 const LedgerCard = () => {
+    const dispatch = useDispatch();
+    const [emailId, setEmail] = useState('');
     const [orderType, setOrderType] = useState('');
     const [fromDate, setFromDate] = useState(dayjs());
     const [toDate, setToDate] = useState(dayjs());
     const [comment, setComment] = useState('');
-
+    const { preview: rows } = useSelector((state) => state.ledger)
     const orderOptions = [
-        { value: 'booking', label: 'Booking Order' },
-        { value: 'quotation', label: 'Quotation Order' },
+        { value: 'Booking', label: 'Booking Order' },
+        { value: 'Quotation', label: 'Quotation Order' },
     ];
 
-    const rows = [
-        { id: 1, date: '2025-05-01', bookingId: 'BK001', pickup: 'Delhi', drop: 'Mumbai' },
-        { id: 2, date: '2025-05-02', bookingId: 'BK002', pickup: 'Jaipur', drop: 'Chennai' },
-    ];
+
 
     return (
         <Box p={4} component={Paper} elevation={3} sx={{ borderRadius: 3 }}>
@@ -30,7 +30,7 @@ const LedgerCard = () => {
 
             <Grid container spacing={2} alignItems="center">
                 <Grid item xs={12} sm={4}>
-                    <TextField fullWidth label="Search for Customer" variant="outlined" />
+                    <TextField fullWidth label="Email" value={emailId} onChange={(e) => setEmail(e.target.value)} variant="outlined" />
                 </Grid>
 
                 <Grid item xs={12} sm={4}>
@@ -66,7 +66,14 @@ const LedgerCard = () => {
                 </Grid>
 
                 <Grid item xs={12}>
-                    <Button variant="contained" color="primary">
+                    <Button variant="contained" color="primary" onClick={() => {
+                        dispatch(previewInvoices({
+                            emailId,
+                            orderType,
+                            fromDate: fromDate.format('YYYY-MM-DD'),
+                            endDate: toDate.format('YYYY-MM-DD'),
+                        }))
+                    }}>
                         Get Invoice
                     </Button>
                 </Grid>
@@ -91,8 +98,8 @@ const LedgerCard = () => {
                                     <TableCell>{idx + 1}</TableCell>
                                     <TableCell>{row.date}</TableCell>
                                     <TableCell>{row.bookingId}</TableCell>
-                                    <TableCell>{row.pickup}</TableCell>
-                                    <TableCell>{row.drop}</TableCell>
+                                    <TableCell>{row.pickupLocation}</TableCell>
+                                    <TableCell>{row.dropLocation.stationName}</TableCell>
                                     <TableCell>
                                         <Button variant="outlined" size="small">View</Button>
                                     </TableCell>

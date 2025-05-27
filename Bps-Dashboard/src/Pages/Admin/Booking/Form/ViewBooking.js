@@ -13,10 +13,6 @@ import {useDispatch,useSelector} from 'react-redux'
 import {clearViewedBooking, viewBookingById} from '../../../../features/booking/bookingSlice';
 
 
-
-
-
-
 const ViewBooking = () => {
     const navigate = useNavigate();
     const {bookingId} = useParams();

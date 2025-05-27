@@ -3,12 +3,30 @@ import axios from 'axios';
 
 const BASE_URL = 'http://localhost:8000/api/v2/bookings'
 
+
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 export const createBooking = createAsyncThunk(
 
   'bookings/createBooking', async (data, { rejectWithValue }) => {
     console.log('Data being sent to create booking:', data);
     try {
-      const res = await axios.post(`${BASE_URL}`, data)
+      const token = localStorage.getItem('authToken');
+      const res = await axios.post(`${BASE_URL}`, data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
       return res.data.booking
     }
     catch (err) {
@@ -64,13 +82,10 @@ export const cancelledBookingCount = createAsyncThunk(
 export const fetchBookingsByType = createAsyncThunk(
   'bookings/fetchByType',
   async (type, { rejectWithValue }) => {
-    console.log('Fetching bookings of type:', type)
     try {
       const response = await axios.get(`${BASE_URL}/booking-list?type=${type}`);
-      console.log('Booking list response:', response.data); // Log the response
       return { type, data: response.data.data };
     } catch (err) {
-      console.log('Error fetching bookings:', err);
       return rejectWithValue({ type, error: err.response?.data?.message || err.message });
     }
   }

@@ -12,23 +12,29 @@ import {
   getActiveDeliveriesCount,
   getCancelledBookingsCount,
   getTotalRevenue,
-  sendBookingEmail
+  sendBookingEmail,
+  createPublicBooking,
+  getPendingThirdPartyBookings,
+  approveThirdPartyBookingRequest,
 } from '../controller/booking.controller.js';
 
 import { parseFormData } from "../middleware/multerParser.middleware.js";
 import { verifyJwt } from '../middleware/auth.middleware.js'
 const router = express.Router();
 
-router.get('/booking-list', getBookingStatusList);
-router.get('/revenue-list', getBookingRevenueList);
-router.get('/bookings/count/requests', getBookingRequestsCount);
-router.get('/bookings/count/active', getActiveDeliveriesCount);
-router.get('/bookings/count/cancelled', getCancelledBookingsCount);
-router.get('/bookings/revenue/total', getTotalRevenue);
+router.get('/booking-list', verifyJwt, getBookingStatusList);
+router.get('/revenue-list', verifyJwt, getBookingRevenueList);
+router.get('/bookings/count/requests', verifyJwt, getBookingRequestsCount);
+router.get('/bookings/count/active', verifyJwt, getActiveDeliveriesCount);
+router.get('/bookings/count/cancelled', verifyJwt, getCancelledBookingsCount);
+router.get('/bookings/revenue/total', verifyJwt, getTotalRevenue);
 router.post('/send-booking-email', sendBookingEmail);
 
 
 //  CRUD routes AFTER static routes
+router.post('/public', createPublicBooking);
+router.get("/pending", verifyJwt, getPendingThirdPartyBookings);
+router.patch("/:bookingId/approve", verifyJwt, approveThirdPartyBookingRequest);
 router.post('/', verifyJwt, createBooking);           // Create a new booking
 router.patch('/:id/activate', activateBooking);
 router.patch('/:bookingId/cancel', cancelBooking);

@@ -135,7 +135,15 @@ const quotationSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  createdByRole: {
+    type: String,
+    enum: ['admin', 'supervisor'],
 
+  },
+  createdByUser: {
+    type: String,
+
+  },
 }, { timestamps: true });
 
 
@@ -180,5 +188,4 @@ quotationSchema.pre("save", async function (next) {
 const Quotation = mongoose.models.Quotation || mongoose.model("Quotation", quotationSchema);
 
 export default Quotation;
-
 

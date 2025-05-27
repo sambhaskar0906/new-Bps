@@ -1,499 +1,587 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
+import { Formik, Form, Field, FieldArray } from "formik";
 import {
-  Button,
-  TextField,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  Grid,
-  Typography,
-  Paper,
-  Container,
-  IconButton,
   Box,
-  Breadcrumbs,
+  Button,
+  Grid,
+  MenuItem,
+  TextField,
+  Typography,
+  InputAdornment,
 } from "@mui/material";
-import {
-  AddCircleOutline,
-  RemoveCircleOutline,
-  Send,
-  LocationOn,
-  Person,
-  LocalShipping,
-  Height,
-  Padding,
-} from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
-import contactBanner from "../../assets/image1/contactus.png";
-import Readyto from "../Designe/Readyto";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import SearchIcon from "@mui/icons-material/Search";
+import AddIcon from "@mui/icons-material/Add";
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchStates, fetchCities, clearCities } from '../../features/Location/locationSlice';
+import { fetchStations } from '../../features/stations/stationSlice'
+import { createBooking } from '../../features/booking/bookingSlice';
+import { useNavigate } from "react-router-dom";
 
-// Reusable styled components
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4),
-  borderRadius: theme.spacing(3),
-  // background: "linear-gradient(145deg,rgb(192, 219, 254),rgb(93, 137, 196))",
-  background: "#dbeafe",
-  boxShadow: "0 8px 32px rgba(14, 12, 12, 0.1)",
-  position: "relative",
-  overflow: "hidden",
+const toPay = ['pay', 'paid', 'none'];
 
-  "&:before": {
-    content: '""',
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "4px",
-    height: "100%",
-    background: theme.palette.primary.main,
-  },
-}));
-
-const SectionTitle = styled(Typography)(({ theme }) => ({
-  marginBottom: theme.spacing(3),
-  color: theme.palette.primary.dark,
-  fontWeight: 700,
-  display: "flex",
-  alignItems: "center",
-  gap: theme.spacing(1),
-  "& svg": { fontSize: "1rem" },
-}));
-
-const StyledButton = styled(Button)(({ theme }) => ({
-  borderRadius: theme.spacing(2),
-  padding: theme.spacing(1),
-  fontSize: "1.1rem",
-  transition: "all 0.3s ease",
-  background: "linear-gradient(45deg, #1976d2, #2196f3)",
-  "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: "0 4px 15px rgba(37, 34, 41, 0.4)",
-  },
-}));
-
-const ProductBox = styled(Box)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
-  padding: theme.spacing(3),
-  background: "#f8faff",
-  borderRadius: theme.spacing(2),
-  border: `1px solid ${theme.palette.primary.light}`,
-  position: "relative",
-  backgroundColor: "#dbeafe",
-}));
-
-const RoundedTextField = styled(TextField)(({ theme }) => ({
-  "& .MuiOutlinedInput-root": {
-    borderRadius: theme.spacing(2),
-    backgroundColor: "#F1EFEC",
-    "& input": {
-      color: "#f8faff",
-      paddingTop: "8px",
-      paddingBottom: "10px",
+const initialValues = {
+  startStation: "",
+  endStation: "",
+  bookingDate: null,
+  deliveryDate: null,
+  customerSearch: "",
+  firstName: "",
+  middleName: "",
+  lastName: "",
+  mobile: "",
+  email: "",
+  senderName: "",
+  senderLocality: "",
+  fromCity: "",
+  senderGgt: "",
+  fromState: "",
+  senderPincode: "",
+  receiverName: "",
+  receiverLocality: "",
+  receiverGgt: "",
+  toState: "",
+  toCity: "",
+  toPincode: "",
+  items: [
+    {
+      receiptNo: "",
+      refNo: "",
+      insurance: "",
+      vppAmount: "",
+      toPayPaid: "",
+      weight: "",
+      amount: "",
     },
-    "& textarea": {
-      color: "#f8faff",
-      paddingTop: "6px",
-      paddingBottom: "6px",
-    },
-  },
-  "& .MuiInputLabel-root": {
-    width: "100%",
-    textAlign: "left",
-  },
-}));
+  ],
+  addComment: "",
+  freight: "",
+  ins_vpp: "",
+  billTotal: "",
+  cgst: "",
+  sgst: "",
+  igst: "",
+  grandTotal: "",
+};
 
-const AddressSection = ({ title, prefix }) => (
-  <>
-    <Grid item xs={12}>
-      <SectionTitle variant="h6">{title}</SectionTitle>
-    </Grid>
-    {[
-      "First Name",
-      "GST No.",
-      "Locality/Street",
-      "State",
-      "City",
-      "Pin Code",
-    ].map((field, index) => (
-      <Grid item xs={12} sm={4} key={field}>
-        <RoundedTextField
-          fullWidth
-          label={field}
-          name={`${prefix}_${field.replace(/ /g, "")}`}
-          variant="outlined"
-        />
-      </Grid>
-    ))}
-  </>
-);
+const totalFields = [
+  { name: "freight", label: "FREIGHT", readOnly: false },
+  { name: "ins_vpp", label: "INS/VPP", readOnly: false },
+  { name: "billTotal", label: "Bill Total", readOnly: true },
+  { name: "cgst", label: "CGST%", readOnly: false },
+  { name: "sgst", label: "SGST%", readOnly: false },
+  { name: "igst", label: "IGST%", readOnly: false },
+  { name: "grandTotal", label: "Grand Total", readOnly: true },
+];
 
-const Order = () => {
-  const [products, setProducts] = useState([{ id: 1 }]);
-  const [stations] = useState(["Station A", "Station B", "Station C"]);
+const calculateTotals = (values) => {
+  const items = values.items || [];
+  const billTotal = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    console.log("Form submitted!");
+  const freight = Number(values.freight || 0);
+  const ins_vpp = Number(values.ins_vpp || 0);
+  const cgst = Number(values.cgst || 0);
+  const sgst = Number(values.sgst || 0);
+  const igst = Number(values.igst || 0);
+
+  const grandTotal = billTotal + freight + ins_vpp + cgst + sgst + igst;
+
+  return {
+    billTotal: billTotal.toFixed(2),
+    grandTotal: grandTotal.toFixed(2),
+    computedTotalRevenue: grandTotal.toFixed(2)
   };
+};
 
-  const handleInputChange = (event) => {
-    console.log(event.target.name, event.target.value);
-  };
+const BookingForm = () => {
+  const [senderCities, setSenderCities] = React.useState([]);
+  const [receiverCities, setReceiverCities] = React.useState([]);
 
-  const addProduct = () => {
-    setProducts((prev) => [...prev, { id: prev.length + 1 }]);
-  };
+  const dispatch = useDispatch();
+  const { states, cities } = useSelector((state) => state.location);
+  const { list: stations } = useSelector((state) => state.stations);
+  const navigate = useNavigate();
 
-  const removeProduct = (id) => {
-    setProducts((prev) => prev.filter((product) => product.id !== id));
-  };
-
-  const renderProductFields = (product, index) => (
-    <ProductBox key={product.id}>
-      <Grid container spacing={2} alignItems="center">
-        <Grid
-          item
-          xs={12}
-          container
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <Typography
-            variant="subtitle1"
-            color="primary"
-            sx={{ fontWeight: 600 }}
-          >
-            Product #{index + 1}
-          </Typography>
-          <IconButton
-            onClick={() => removeProduct(product.id)}
-            disabled={products.length === 1}
-            sx={{
-              color: products.length === 1 ? "text.disabled" : "error.main",
-            }}
-          >
-            <RemoveCircleOutline />
-          </IconButton>
-        </Grid>
-
-        {["Receipt No.", "Reference No.", "Insurance"].map((field) => (
-          <Grid item xs={12} sm={6} md={3} key={field}>
-            <RoundedTextField
-              fullWidth
-              label={field}
-              name={`${field.replace(/ /g, "")}_${product.id}`}
-            />
-          </Grid>
-        ))}
-
-        <Grid item xs={12} sm={6} md={3}>
-          <FormControl fullWidth variant="outlined">
-            <InputLabel>Payment</InputLabel>
-            <Select
-              label="Payment"
-              name={`payment_${product.id}`}
-              sx={{ borderRadius: 2 }}
-            >
-              <MenuItem value="To Pay">To Pay</MenuItem>
-              <MenuItem value="Paid">Paid</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-
-        {["VVP Amount", "Weight Kgs.", "Amount"].map((field) => (
-          <Grid item xs={12} sm={4} key={field}>
-            <RoundedTextField
-              fullWidth
-              label={field}
-              name={field.replace(/ /g, "")}
-            />
-          </Grid>
-        ))}
-      </Grid>
-    </ProductBox>
-  );
+  useEffect(() => {
+    dispatch(fetchStates());
+    dispatch(fetchStations());
+  }, [dispatch]);
 
   return (
-    <div>
-      <Box
-        sx={{
-          mt: 3,
-
-          position: "relative",
-          width: "100vw",
-          height: { xs: "300px", md: "350px" },
-          backgroundImage: `url(${contactBanner})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center right",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          "&:after": {
-            content: '""',
-            position: "absolute",
-            top: 10,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.6)",
-          },
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <Formik
+        initialValues={initialValues}
+        onSubmit={async (values, formikHelpers) => {
+          try {
+            await dispatch(createBooking(values)).unwrap();
+            formikHelpers.resetForm();
+            navigate('/employer')
+          } catch (error) {
+            console.log("Error while adding booking", error);
+          }
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
-          <Typography
-            variant="h2"
-            sx={{
-              color: "white",
-              fontWeight: 800,
-              fontSize: { xs: "2rem", sm: "3rem", md: "4rem" },
-              textShadow: "2px 2px 8px rgba(0,0,0,0.7)",
-              textAlign: "center",
-              justifyContent: "center",
-            }}
-          >
-            Make Your Booking
-          </Typography>
-        </Box>
-      </Box>
-
-      <Box backgroundColor="" sx={{ p: { md: 20 }, m: { xs: 1.5 } }}>
-        <StyledPaper>
-          <Typography
-            variant="h4"
-            align="center"
-            sx={{
-              color: "red",
-              fontWeight: 800,
-              mb: 6,
-              textTransform: "uppercase",
-              letterSpacing: 1.2,
-            }}
-          >
-            <LocalShipping
-              sx={{ fontSize: "2.5rem", mr: 1.5, verticalAlign: "middle" }}
+        {({ values, handleChange, setFieldValue }) => (
+          <Form>
+            <EffectSyncCities
+              values={values}
+              dispatch={dispatch}
+              setSenderCities={setSenderCities}
+              setReceiverCities={setReceiverCities}
             />
-            Create Your Booking
-          </Typography>
+            <EffectSyncTotals values={values} setFieldValue={setFieldValue} />
 
-          <form onSubmit={handleSubmit}>
-            <Grid container spacing={2}>
-              {/* Station Section */}
-              <Grid item xs={12}>
-                <SectionTitle variant="h6">
-                  <LocationOn />
-                  Station Information
-                </SectionTitle>
-              </Grid>
-              {["Start Station", "Destination Station"].map((label) => (
-                <Grid item xs={12} sm={6} key={label}>
-                  <FormControl fullWidth variant="outlined">
-                    <InputLabel>{label}</InputLabel>
-                    <Select
-                      label={label}
-                      name={label.replace(/ /g, "")}
-                      // sx={{ borderRadius: 2 }}
-                    >
-                      {stations.map((station) => (
-                        <MenuItem key={station} value={station}>
-                          {station}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              ))}
-
-              {/* {["Booking Date", "Delivery Date"].map((label) => (
-                <Grid item xs={12} sm={6} key={label}>
-                  <RoundedTextField
+            <Box sx={{ mt: 6, p: 3, maxWidth: 1200, mx: "auto" }}>
+              <Grid container spacing={2}>
+                {/* Station Selection */}
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    select
                     fullWidth
-                    type="date"
-                    label={label}
-                    name={label.replace(/ /g, "")}
-                    variant="outlined"
-                    InputLabelProps={{ shrink: true }}
-                    placeholder="dd-mm-yyyy"
-                    sx={{
-                      backgroundColor: "rgba(255, 255, 255, 0.08)",
-                      borderRadius: 2,
-                      input: {
-                        color: "black",
-                        padding: "12px",
-                        borderRadius: 2,
-                        textAlign: "center", // center the text
-                      },
-                      label: {
-                        color: "rgb(60, 53, 53)",
-                      },
-                      "& .MuiOutlinedInput-root": {
-                        "& fieldset": {
-                          borderColor: "rgba(52, 30, 30, 0.79)",
-                        },
-                        "&:hover fieldset": {
-                          borderColor: "black",
-                        },
-                        "&.Mui-focused fieldset": {
-                          borderColor: "primary.main",
-                        },
-                      },
-                    }}
-                    onFocus={(e) => e.target.showPicker?.()} // for browser compatibility
+                    label="Start Station"
+                    name="startStation"
+                    value={values.startStation}
+                    onChange={handleChange}
+                  >
+                    {stations.map((station) => (
+                      <MenuItem key={station.stationId || station.sNo} value={station.stationName}>
+                        {station.stationName}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Destination Station"
+                    name="endStation"
+                    value={values.endStation}
+                    onChange={handleChange}
+                  >
+                    {stations.map((station) => (
+                      <MenuItem key={station.stationId || station.sNo} value={station.stationName}>
+                        {station.stationName}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+
+                {/* Date Pickers */}
+                <Grid item xs={12} sm={6}>
+                  <DatePicker
+                    label="Booking Date"
+                    value={values.bookingDate}
+                    onChange={(val) => setFieldValue("bookingDate", val)}
+                    renderInput={(params) => (
+                      <TextField fullWidth {...params} name="bookingDate" />
+                    )}
                   />
                 </Grid>
-              ))} */}
+                <Grid item xs={12} sm={6}>
+                  <DatePicker
+                    label="Proposed Delivery Date"
+                    value={values.deliveryDate}
+                    onChange={(val) => setFieldValue("deliveryDate", val)}
+                    renderInput={(params) => (
+                      <TextField fullWidth {...params} name="deliveryDate" />
+                    )}
+                  />
+                </Grid>
 
-              {["Booking Date", "Delivery Date"].map((label) => (
-                <Grid item xs={12} sm={6} key={label}>
-                  <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-                    {label}
+                {/* Customer Search */}
+                <Grid item xs={12} sm={9}>
+                  <Typography fontWeight="bold">
+                    Customer Name/Number
                   </Typography>
-                  <RoundedTextField
+                  <TextField
                     fullWidth
-                    type="date"
-                    name={label.replace(/ /g, "")}
-                    variant="outlined"
-                    InputLabelProps={{ shrink: true }}
-                    placeholder="dd-mm-yyyy"
-                    sx={{
-                      backgroundColor: "rgba(255, 255, 255, 0.08)",
-                      borderRadius: 2,
-                      input: {
-                        color: "black",
-                        padding: "12px",
-                        borderRadius: 2,
-                        textAlign: "center",
-                      },
-                      "& .MuiOutlinedInput-root": {
-                        "& fieldset": {
-                          borderColor: "rgba(52, 30, 30, 0.79)",
-                        },
-                        "&:hover fieldset": {
-                          borderColor: "black",
-                        },
-                        "&.Mui-focused fieldset": {
-                          borderColor: "primary.main",
-                        },
-                      },
+                    placeholder="Search for customer"
+                    name="customerSearch"
+                    value={values.customerSearch}
+                    onChange={handleChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon />
+                        </InputAdornment>
+                      ),
                     }}
-                    onFocus={(e) => e.target.showPicker?.()}
                   />
                 </Grid>
-              ))}
-
-              {/* Customer Section */}
-              <Grid item xs={12}>
-                <SectionTitle variant="h6">
-                  <Person />
-                  Customer Information
-                </SectionTitle>
-              </Grid>
-              {["First Name", "Middle Name", "Last Name"].map((field) => (
-                <Grid item xs={12} sm={4} key={field}>
-                  <RoundedTextField
+                <Grid item xs={12} sm={3} sx={{ display: "flex", alignItems: "flex-end" }}>
+                  <Button
                     fullWidth
-                    label={field}
-                    name={field.replace(/ /g, "")}
-                  />
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    type="submit"
+                  >
+                    Register
+                  </Button>
                 </Grid>
-              ))}
-              <Grid item xs={12} sm={4}>
-                <RoundedTextField
-                  fullWidth
-                  label="Contact Number"
-                  name="ContactNumber"
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <RoundedTextField
-                  fullWidth
-                  label="Email Address"
-                  name="Email"
-                />
-              </Grid>
 
-              {/* Address Sections */}
-              <AddressSection title="From Address" prefix="from" />
-              <AddressSection title="To Address" prefix="to" />
+                {/* Customer Details */}
+                {["firstName", "middleName", "lastName"].map((name) => (
+                  <Grid item xs={12} sm={4} key={name}>
+                    <TextField
+                      fullWidth
+                      label={name.replace(/([A-Z])/g, " $1").trim()}
+                      name={name}
+                      value={values[name]}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                ))}
 
-              {/* Product Section */}
-              <Grid item xs={12}>
-                <SectionTitle variant="h6">
-                  <LocalShipping />
-                  Product Details
-                </SectionTitle>
-                {products.map(renderProductFields)}
-                <Button
-                  variant="outlined"
-                  startIcon={<AddCircleOutline />}
-                  onClick={addProduct}
-                  sx={{
-                    mt: 2,
-                    borderRadius: 2,
-                    borderWidth: 2,
-                    "&:hover": { borderWidth: 2 },
-                  }}
-                >
-                  Add Product
-                </Button>
-              </Grid>
-
-              {/* Additional Fields */}
-              <Grid item xs={12}>
-                <RoundedTextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  label="Additional Comments"
-                  name="additionalComments"
-                />
-              </Grid>
-
-              {[
-                "FREIGHT",
-                "INS/VPP",
-                "Bill Total",
-                "CGST%",
-                "SGST%",
-                "IGST%",
-                "Grand Total",
-              ].map((field) => (
-                <Grid item xs={12} sm={6} key={field}>
-                  <RoundedTextField
+                <Grid item xs={12} sm={6}>
+                  <TextField
                     fullWidth
-                    label={field}
-                    name={field.replace(/ /g, "")}
+                    label="Contact Number"
+                    name="mobile"
+                    value={values.mobile}
+                    onChange={handleChange}
                   />
                 </Grid>
-              ))}
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="email"
+                    value={values.email}
+                    onChange={handleChange}
+                    type="email"
+                  />
+                </Grid>
 
-              {/* Submit Button */}
-              <Grid item xs={12} sx={{ textAlign: "center" }}>
-                <StyledButton
-                  type="submit"
-                  variant="contained"
-                  size="large"
-                  startIcon={<Send sx={{ fontSize: "1rem" }} />}
-                >
-                  Confirm Booking
-                </StyledButton>
+                {/* Sender Address */}
+                <Grid item xs={12}>
+                  <Typography variant="h6">From (Address)</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Name"
+                    name="senderName"
+                    value={values.senderName}
+                    onChange={handleChange}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="GST Number"
+                    name="senderGgt"
+                    value={values.senderGgt}
+                    onChange={handleChange}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Locality / Street"
+                    name="senderLocality"
+                    value={values.senderLocality}
+                    onChange={handleChange}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="State"
+                    name="fromState"
+                    value={values.fromState}
+                    onChange={handleChange}
+                  >
+                    {states.map((s) => (
+                      <MenuItem key={s} value={s}>
+                        {s}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="City"
+                    name="fromCity"
+                    value={values.fromCity}
+                    onChange={handleChange}
+                  >
+                    {senderCities.map((c) => (
+                      <MenuItem key={c} value={c}>
+                        {c}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Pin Code"
+                    name="senderPincode"
+                    value={values.senderPincode}
+                    onChange={handleChange}
+                  />
+                </Grid>
+
+                {/* Receiver Address */}
+                <Grid item xs={12}>
+                  <Typography variant="h6">To (Address)</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Name"
+                    name="receiverName"
+                    value={values.receiverName}
+                    onChange={handleChange}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="GST Number"
+                    name="receiverGgt"
+                    value={values.receiverGgt}
+                    onChange={handleChange}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Locality / Street"
+                    name="receiverLocality"
+                    value={values.receiverLocality}
+                    onChange={handleChange}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="State"
+                    name="toState"
+                    value={values.toState}
+                    onChange={handleChange}
+                  >
+                    {states.map((s) => (
+                      <MenuItem key={s} value={s}>
+                        {s}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="City"
+                    name="toCity"
+                    value={values.toCity}
+                    onChange={handleChange}
+                  >
+                    {receiverCities.map((c) => (
+                      <MenuItem key={c} value={c}>
+                        {c}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Pin Code"
+                    name="toPincode"
+                    value={values.toPincode}
+                    onChange={handleChange}
+                  />
+                </Grid>
+
+                {/* Product Details */}
+                <Grid item xs={12}>
+                  <Typography variant="h6">Product Details</Typography>
+                </Grid>
+                <FieldArray name="items">
+                  {({ push, remove }) => (
+                    <>
+                      {values.items.map((_, index) => (
+                        <Grid container spacing={2} key={index} alignItems="center" sx={{ mb: 2 }}>
+                          <Grid item xs={1}>
+                            <Typography>{index + 1}.</Typography>
+                          </Grid>
+                          {[
+                            "receiptNo",
+                            "refNo",
+                            "insurance",
+                            "vppAmount",
+                            "weight",
+                            "amount",
+                          ].map((field) => (
+                            <Grid item xs={6} sm={3} md={2} key={field}>
+                              <Field
+                                as={TextField}
+                                fullWidth
+                                size="small"
+                                label={field.replace(/([A-Z])/g, " $1").trim()}
+                                name={`items[${index}].${field}`}
+                              />
+                            </Grid>
+                          ))}
+                          <Grid item xs={6} sm={3} md={2}>
+                            <TextField
+                              select
+                              fullWidth
+                              size="small"
+                              label="To Pay/Paid"
+                              name={`items[${index}].toPayPaid`}
+                              value={values.items[index].toPayPaid}
+                              onChange={handleChange}
+                            >
+                              {toPay.map((p) => (
+                                <MenuItem key={p} value={p}>
+                                  {p}
+                                </MenuItem>
+                              ))}
+                            </TextField>
+                          </Grid>
+                          <Grid item xs={6} sm={3} md={1}>
+                            <Button
+                              color="error"
+                              onClick={() => remove(index)}
+                              variant="outlined"
+                              fullWidth
+                            >
+                              Remove
+                            </Button>
+                          </Grid>
+                        </Grid>
+                      ))}
+
+                      <Grid item xs={12}>
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          onClick={() =>
+                            push({
+                              receiptNo: "",
+                              refNo: "",
+                              insurance: "",
+                              vppAmount: "",
+                              toPayPaid: "",
+                              weight: "",
+                              amount: "",
+                            })
+                          }
+                        >
+                          + Add Item
+                        </Button>
+                      </Grid>
+                    </>
+                  )}
+                </FieldArray>
+
+                {/* Comments and Totals */}
+                <Grid item xs={12} md={9}>
+                  <TextField
+                    name="addComment"
+                    label="Additional Comment"
+                    multiline
+                    minRows={4}
+                    fullWidth
+                    value={values.addComment}
+                    onChange={handleChange}
+                    variant="outlined"
+                  />
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <Grid container spacing={2}>
+                    {totalFields.map(({ name, label, readOnly }) => (
+                      <Grid item xs={12} key={name}>
+                        <TextField
+                          name={name}
+                          label={label}
+                          value={values[name]}
+                          onChange={handleChange}
+                          fullWidth
+                          size="small"
+                          InputProps={{
+                            readOnly: readOnly,
+                            ...(label.includes("%") && {
+                              endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                            }),
+                          }}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Grid>
+
+                {/* Submit Button */}
+                <Grid item xs={12}>
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                  >
+                    Submit All
+                  </Button>
+                </Grid>
               </Grid>
-            </Grid>
-          </form>
-        </StyledPaper>
-      </Box>
-      <Readyto />
-    </div>
+            </Box>
+          </Form>
+        )}
+      </Formik>
+    </LocalizationProvider>
   );
 };
 
-export default Order;
+const EffectSyncCities = ({ values, dispatch, setSenderCities, setReceiverCities }) => {
+  useEffect(() => {
+    if (values.fromState) {
+      dispatch(fetchCities(values.fromState))
+        .unwrap()
+        .then((res) => setSenderCities(res))
+        .catch(console.error);
+    } else {
+      setSenderCities([]);
+    }
+  }, [values.fromState, dispatch, setSenderCities]);
+
+  useEffect(() => {
+    if (values.toState) {
+      dispatch(fetchCities(values.toState))
+        .unwrap()
+        .then((res) => setReceiverCities(res))
+        .catch(console.error);
+    } else {
+      setReceiverCities([]);
+    }
+  }, [values.toState, dispatch, setReceiverCities]);
+
+  return null;
+};
+
+const EffectSyncTotals = ({ values, setFieldValue }) => {
+  useEffect(() => {
+    const totals = calculateTotals(values);
+    setFieldValue("billTotal", totals.billTotal);
+    setFieldValue("grandTotal", totals.grandTotal);
+  }, [
+    values.items,
+    values.freight,
+    values.ins_vpp,
+    values.cgst,
+    values.sgst,
+    values.igst,
+    setFieldValue
+  ]);
+
+  return null;
+};
+
+export default BookingForm;

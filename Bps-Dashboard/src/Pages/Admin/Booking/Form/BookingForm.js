@@ -15,12 +15,12 @@ import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from "@mui/icons-material/Add";
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchStates, fetchCities, clearCities } from '../../../../features/Location/locationSlice';
-import {fetchStations} from '../../../../features/stations/stationSlice'
+import { fetchStations } from '../../../../features/stations/stationSlice'
 import { createBooking } from '../../../../features/booking/bookingSlice';
 import { useNavigate } from "react-router-dom";
 
 
-const toPay = ['pay', 'paid','none'];
+const toPay = ['pay', 'paid', 'none'];
 
 const initialValues = {
   startStation: "",
@@ -96,16 +96,19 @@ const calculateTotals = (values) => {
 const BookingForm = () => {
   const [senderCities, setSenderCities] = React.useState([]);
   const [receiverCities, setReceiverCities] = React.useState([]);
- 
+
   const dispatch = useDispatch();
   const { states, cities } = useSelector((state) => state.location);
   const { list: stations } = useSelector((state) => state.stations);
-const navigate =useNavigate();
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     dispatch(fetchStates());
     dispatch(fetchStations());
   }, [dispatch]);
+
+
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -124,8 +127,8 @@ const navigate =useNavigate();
         {({ values, handleChange, setFieldValue }) => (
           <Form>
             <EffectSyncCities values={values} dispatch={dispatch} setSenderCities={setSenderCities}
-  setReceiverCities={setReceiverCities}/>
-  <EffectSyncTotals values={values} setFieldValue={setFieldValue} />
+              setReceiverCities={setReceiverCities} />
+            <EffectSyncTotals values={values} setFieldValue={setFieldValue} />
             {/* ... all your form fields go here ... */}
             <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
               <Grid container spacing={2}>
@@ -139,10 +142,10 @@ const navigate =useNavigate();
                     onChange={handleChange}
                   >
                     {stations.map((station) => (
-                    <MenuItem key={station.stationId || station.sNo} value={station.stationName}>
-                            {station.stationName}
-                     </MenuItem>
-                      ))}
+                      <MenuItem key={station.stationId || station.sNo} value={station.stationName}>
+                        {station.stationName}
+                      </MenuItem>
+                    ))}
 
                   </TextField>
                 </Grid>
@@ -156,10 +159,10 @@ const navigate =useNavigate();
                     onChange={handleChange}
                   >
                     {stations.map((station) => (
-                    <MenuItem key={station.stationId || station.sNo} value={station.stationName}>
-                            {station.stationName}
-                     </MenuItem>
-                      ))}
+                      <MenuItem key={station.stationId || station.sNo} value={station.stationName}>
+                        {station.stationName}
+                      </MenuItem>
+                    ))}
                   </TextField>
                 </Grid>
 
@@ -496,22 +499,22 @@ const navigate =useNavigate();
                 <Grid size={{ xs: 12, md: 3 }}>
                   <Grid container spacing={2}>
                     {totalFields.map(({ name, label, readOnly }) => (
-    <Grid item xs={6} key={name}>
-      <TextField
-        name={name}
-        label={label}
-        value={values[name]}
-        onChange={handleChange}
-        fullWidth
-        size="small"
-        InputProps={{
-          readOnly: readOnly,
-          ...(label.includes("%") && {
-            endAdornment: <InputAdornment position="end">%</InputAdornment>,
-          }),
-        }}
-      />
-    </Grid>
+                      <Grid item xs={6} key={name}>
+                        <TextField
+                          name={name}
+                          label={label}
+                          value={values[name]}
+                          onChange={handleChange}
+                          fullWidth
+                          size="small"
+                          InputProps={{
+                            readOnly: readOnly,
+                            ...(label.includes("%") && {
+                              endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                            }),
+                          }}
+                        />
+                      </Grid>
                     ))}
                   </Grid>
                 </Grid>

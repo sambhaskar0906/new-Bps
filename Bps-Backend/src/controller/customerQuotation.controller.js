@@ -26,10 +26,39 @@ const formatQuotations = (quotations) => {
     ],
   }));
 };
+//base condition
+const getBookingFilterByType = (type, user) => {
+  let baseFilter = {};
 
+  if (type === 'active') {
+    baseFilter = { activeDelivery: true };
+  } else if (type === 'cancelled') {
+    baseFilter = { totalCancelled: { $gt: 0 } };
+  } else {
+    baseFilter = {
+      activeDelivery: false,
+      totalCancelled: 0,
+      $or: [
+        { createdByRole: { $in: ['admin', 'supervisor'] } },
+        { requestedByRole: 'public', isApproved: true }
+      ]
+    };
+  }
+
+  if (user?.role === 'supervisor') {
+    return {
+      $and: [
+        baseFilter,
+        { createdByUser: user._id }
+      ]
+    };
+  }
+
+  return baseFilter;
+};
 // Create Quotation Controller
 export const createQuotation = asyncHandler(async (req, res, next) => {
-  console.log("body", req.body);
+  const user = req.user;
   const {
     firstName,
     lastName,
@@ -118,6 +147,8 @@ export const createQuotation = asyncHandler(async (req, res, next) => {
     additionalCmt,
     sTax: Number(sTax),
     amount: Number(amount),
+    createdByUser: user._id,
+    createdByRole: user.role,
     productDetails,
   });
 
@@ -185,28 +216,28 @@ export const deleteQuotation = asyncHandler(async (req, res, next) => {
 
 // Get Total Booking Requests Controller
 export const getTotalBookingRequests = asyncHandler(async (req, res) => {
-  const total = await Quotation.countDocuments({
-    activeDelivery: false,
-    totalCancelled: 0
-  });
+  const filter = getBookingFilterByType('request', req.user); // 'request' means non-active, non-cancelled
+
+  const total = await Quotation.countDocuments(filter);
+
   res.status(200).json(new ApiResponse(200, { totalBookingRequests: total }));
 });
 
 // Get Total Active Deliveries Controller
 export const getTotalActiveDeliveries = asyncHandler(async (req, res) => {
-  const total = await Quotation.countDocuments({ activeDelivery: true });
+  const filter = getBookingFilterByType('active', req.user);
+  const total = await Quotation.countDocuments(filter);
   res.status(200).json(new ApiResponse(200, { totalActiveDeliveries: total }));
 });
 
 // Get Total Cancelled Quotations Controller
 export const getTotalCancelled = asyncHandler(async (req, res) => {
-  const total = await Quotation.countDocuments({ totalCancelled: { $gt: 0 } });
+  const filter = getBookingFilterByType('request', req.user);
+  const total = await Quotation.countDocuments(filter);
   res.status(200).json(new ApiResponse(200, { totalCancelled: total }));
 });
 
-// Get Total Revenue Controller
-// Get Total Revenue Controller
-// Controller to get total revenue from quotations
+
 export const getTotalRevenue = asyncHandler(async (req, res) => {
   const quotations = await Quotation.find();
 
@@ -222,17 +253,6 @@ export const getTotalRevenue = asyncHandler(async (req, res) => {
 });
 
 
-
-// Controller to get total revenue from quotations
-
-
-
-
-
-
-
-
-// Search Quotation by Booking ID Controller
 export const searchQuotationByBookingId = asyncHandler(async (req, res, next) => {
   const { bookingId } = req.params;  // Get the bookingId from the route parameter
 
@@ -252,7 +272,10 @@ export const searchQuotationByBookingId = asyncHandler(async (req, res, next) =>
 });
 
 export const getActiveList = asyncHandler(async (req, res) => {
-  const activeQuotations = await Quotation.find({ activeDelivery: true })
+
+  const filter = getBookingFilterByType('active', req.user);
+
+  const activeQuotations = await Quotation.find(filter)
     .populate("startStation", "stationName")
     .populate("customerId", "firstName lastName");
 
@@ -265,7 +288,8 @@ export const getActiveList = asyncHandler(async (req, res) => {
 });
 
 export const getCancelledList = asyncHandler(async (req, res) => {
-  const cancelledQuotations = await Quotation.find({ totalCancelled: { $gt: 0 } })
+  const filter = getBookingFilterByType('cancelled', req.user);
+  const cancelledQuotations = await Quotation.find(filter)
     .populate("startStation", "stationName")
     .populate("customerId", "firstName lastName");
 
@@ -282,7 +306,8 @@ export const getCancelledList = asyncHandler(async (req, res) => {
 // Controller to get total revenue from quotations
 export const getRevenue = asyncHandler(async (req, res) => {
   // Fetch all quotations that are NOT cancelled
-  const quotations = await Quotation.find({ totalCancelled: 0 })
+  const filter = getBookingFilterByType('request', req.user);
+  const quotations = await Quotation.find(filter)
     .select('bookingId quotationDate startStationName endStation grandTotal computedTotalRevenue')
     .lean();
 
@@ -349,11 +374,8 @@ export const updateQuotationStatus = asyncHandler(async (req, res, next) => {
 
 // Get List of Booking Requests (Not active, not cancelled)
 export const RequestBookingList = asyncHandler(async (req, res) => {
-  // Fetch quotations that are not active and not cancelled
-  const quotations = await Quotation.find({
-    activeDelivery: false,
-    totalCancelled: 0
-  })
+  const filter = getBookingFilterByType('request', req.user);
+  const quotations = await Quotation.find(filter)
     .populate("startStation", "stationName")
     .populate("customerId", "firstName lastName");
 
