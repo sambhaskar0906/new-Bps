@@ -335,13 +335,20 @@ const QuotationCard = () => {
                         <IconButton size="small" color="primary" onClick={() => handleUpdate(row['Booking ID'])}>
                           <EditIcon fontSize="small" />
                         </IconButton>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          title="CancelScheduleSend"
+                        >
+                          <CancelScheduleSendIcon fontSize="small" />
+                        </IconButton>
                         <IconButton size="small" color="error" onClick={() => {
                           handleDelete(row['Booking ID']);
                         }}>
                           <DeleteIcon fontSize="small" />
                         </IconButton>
-                        <IconButton>
-                          <SendIcon />
+                        <IconButton size="small" color="primary">
+                          <SendIcon fontSize="small" />
                         </IconButton>
                       </Box>
                     </TableCell>

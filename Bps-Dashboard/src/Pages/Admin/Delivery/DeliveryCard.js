@@ -25,6 +25,7 @@ const DeliveryCard = () => {
     const { requestCount: quotationRequestCountValue, list: quotationList, loading: quotationLoading } = useSelector((state) => state.quotations);
     const { list: driverList = [] } = useSelector((state) => state.drivers);
     const { list: vehicleList = [] } = useSelector((state) => state.vehicles);
+    const { list: finalDeliveryList = [] } = useSelector((state) => state.deliveries);
 
     const [selectedCard, setSelectedCard] = useState('booking');
     const [selectedItems, setSelectedItems] = useState({ booking: [], quotation: [], final: [] });
@@ -38,6 +39,8 @@ const DeliveryCard = () => {
         dispatch(fetchQuotationRequest());
         dispatch(getAvailableVehiclesList());
         dispatch(fetchavailableList());
+
+        // dispatch(fetchFinalDeliveries());
     }, [dispatch]);
 
     const handleCardClick = (type) => {
@@ -79,7 +82,6 @@ const DeliveryCard = () => {
         });
     };
 
-
     const cards = [
         {
             key: 'booking',
@@ -95,13 +97,13 @@ const DeliveryCard = () => {
         },
         {
             key: 'final',
-            count: 0,
+            count: finalDeliveryList.length || 0,
             subtitle: 'Final Delivery',
             stat: 'NaN% (30 days)'
         }
     ];
 
-    const currentList = selectedCard === 'quotation' ? quotationList : selectedCard === 'final' ? [] : bookingList;
+    const currentList = selectedCard === 'quotation' ? quotationList : selectedCard === 'final' ? finalDeliveryList : bookingList;
     const currentLoading = selectedCard === 'quotation' ? quotationLoading : selectedCard === 'final' ? false : bookingLoading;
 
     return (
@@ -198,22 +200,49 @@ const DeliveryCard = () => {
             </Box>
 
             {/* Table Header */}
-            <Box sx={{
-                display: 'grid',
-                gridTemplateColumns: '80px 80px 1fr 1fr 1fr 1fr',
-                backgroundColor: '#1976d2',
-                padding: 2,
-                borderRadius: 2,
-                color: 'white',
-                fontWeight: 600,
-                mt: 2
-            }}>
-                <Typography>Select</Typography>
-                <Typography>S. No</Typography>
-                <Typography>Order ID</Typography>
-                <Typography>Name</Typography>
-                <Typography>Start Station</Typography>
-                <Typography>Destination Station</Typography>
+            <Box
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: selectedCard === 'final'
+                        ? '60px 60px 1fr 1fr 1fr 1fr 1fr 1fr'
+                        : '60px 60px 1fr 1fr 1fr 1fr',
+                    backgroundColor: '#1976d2',
+                    padding: 2,
+                    borderRadius: 2,
+                    color: 'white',
+                    fontWeight: 600,
+                    mt: 2,
+                    gap: 1 // adds spacing between columns
+                }}
+            >
+                <Typography variant="body2" fontWeight={600}>
+                    Select
+                </Typography>
+                <Typography variant="body2" fontWeight={600}>
+                    S. No
+                </Typography>
+                <Typography variant="body2" fontWeight={600}>
+                    Order ID
+                </Typography>
+                <Typography variant="body2" fontWeight={600}>
+                    Name
+                </Typography>
+                {selectedCard === 'final' && (
+                    <>
+                        <Typography variant="body2" fontWeight={600}>
+                            Driver
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                            Vehicle
+                        </Typography>
+                    </>
+                )}
+                <Typography variant="body2" fontWeight={600}>
+                    Start Station
+                </Typography>
+                <Typography variant="body2" fontWeight={600}>
+                    Destination Station
+                </Typography>
             </Box>
 
             {/* Table Body */}
@@ -225,7 +254,9 @@ const DeliveryCard = () => {
                     return (
                         <Box key={uniqueId} sx={{
                             display: 'grid',
-                            gridTemplateColumns: '80px 80px 1fr 1fr 1fr 1fr',
+                            gridTemplateColumns: selectedCard === 'final'
+                                ? '80px 80px 1fr 1fr 1fr 1fr 1fr 1fr'
+                                : '80px 80px 1fr 1fr 1fr 1fr',
                             padding: 2,
                             borderBottom: '1px solid #e0e0e0',
                             alignItems: 'center'
@@ -240,6 +271,12 @@ const DeliveryCard = () => {
                             <Typography>{item.fromName || item.Name}</Typography>
                             <Typography>{item.pickup || item['Pick up']}</Typography>
                             <Typography>{item.drop || item.Drop}</Typography>
+                            {selectedCard === 'final' && (
+                                <>
+                                    <Typography>{item.driverName || 'N/A'}</Typography>
+                                    <Typography>{item.vehicleModel || 'N/A'}</Typography>
+                                </>
+                            )}
                         </Box>
                     );
                 })

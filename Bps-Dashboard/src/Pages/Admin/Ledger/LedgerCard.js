@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import {
     Box, TextField, Button, MenuItem, Typography, Table, TableBody, TableCell,
-    TableContainer, TableHead, TableRow, Paper, Grid
+    TableContainer, TableHead, TableRow, Paper, Grid,
+    Checkbox
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
@@ -14,6 +15,7 @@ const LedgerCard = () => {
     const [fromDate, setFromDate] = useState(dayjs());
     const [toDate, setToDate] = useState(dayjs());
     const [comment, setComment] = useState('');
+    const [selectedRows, setSelectedRows] = useState([]);
     const { preview: rows } = useSelector((state) => state.ledger)
     const orderOptions = [
         { value: 'Booking', label: 'Booking Order' },
@@ -84,6 +86,20 @@ const LedgerCard = () => {
                     <Table>
                         <TableHead>
                             <TableRow sx={{ backgroundColor: "#1565c0" }}>
+                                <TableCell padding="checkbox">
+                                    <Checkbox
+                                        sx={{ color: "white" }}
+                                        checked={selectedRows.length === rows.length && rows.length > 0}
+                                        indeterminate={selectedRows.length > 0 && selectedRows.length < rows.length}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setSelectedRows(rows.map(row => row.id));
+                                            } else {
+                                                setSelectedRows([]);
+                                            }
+                                        }}
+                                    />
+                                </TableCell>
                                 <TableCell sx={{ fontWeight: "bold", color: "white" }}>S.No</TableCell>
                                 <TableCell sx={{ fontWeight: "bold", color: "white" }}>Date</TableCell>
                                 <TableCell sx={{ fontWeight: "bold", color: "white" }}>Booking ID</TableCell>
@@ -92,20 +108,35 @@ const LedgerCard = () => {
                                 <TableCell sx={{ fontWeight: "bold", color: "white" }}>Action</TableCell>
                             </TableRow>
                         </TableHead>
+
                         <TableBody>
                             {rows.map((row, idx) => (
                                 <TableRow key={row.id}>
+                                    <TableCell padding="checkbox">
+                                        <Checkbox
+                                            checked={selectedRows.includes(row.bookingId)}
+                                            onChange={(e) => {
+                                                const isChecked = e.target.checked;
+                                                setSelectedRows((prev) =>
+                                                    isChecked
+                                                        ? [...prev, row.bookingId]
+                                                        : prev.filter((id) => id !== row.bookingId)
+                                                );
+                                            }}
+                                        />
+                                    </TableCell>
                                     <TableCell>{idx + 1}</TableCell>
                                     <TableCell>{row.date}</TableCell>
                                     <TableCell>{row.bookingId}</TableCell>
                                     <TableCell>{row.pickupLocation}</TableCell>
-                                    <TableCell>{row.dropLocation.stationName}</TableCell>
+                                    <TableCell>{row.dropLocation?.stationName || "N/A"}</TableCell>
                                     <TableCell>
                                         <Button variant="outlined" size="small">View</Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
+
                     </Table>
                 </TableContainer>
             </Box>

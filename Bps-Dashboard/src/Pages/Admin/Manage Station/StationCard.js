@@ -47,6 +47,7 @@ const StationCard = () => {
   const [currentStation, setCurrentStation] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [searchStation, setSearchStation] = useState('');
+  const [filteredStations, setFilteredStations] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
 
   const handleClick = (event) => {
@@ -67,6 +68,9 @@ const StationCard = () => {
   useEffect(() => {
     dispatch(fetchStations());
   }, [dispatch]);
+  useEffect(() => {
+    setFilteredStations(stations);
+  }, [stations]);
   useEffect(() => {
     if (searchStation.trim() === '') {
       dispatch(fetchStations())
@@ -134,7 +138,14 @@ const StationCard = () => {
           variant="outlined"
           size="small"
           value={searchStation}
-          onChange={(e) => setSearchStation(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setSearchStation(value);
+            const filtered = stations.filter((station) =>
+              station.stationName.toLowerCase().includes(value.toLowerCase())
+            );
+            setFilteredStations(filtered);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               dispatch(searchStationByName(searchStation.trim()))
@@ -184,7 +195,7 @@ const StationCard = () => {
               </TableRow>
             ) : (
 
-              Array.isArray(stations) && stations.map((station, index) => (
+              Array.isArray(filteredStations) && filteredStations.map((station, index) => (
                 <TableRow key={station._id || station.id}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{station.stationId || station.id}</TableCell>

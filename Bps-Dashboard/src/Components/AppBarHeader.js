@@ -157,8 +157,11 @@ const AppBarHeader = () => {
                             sx={{ width: 40, height: 40 }}
                         />
                         <Box>
-                            <Typography variant="subtitle2" fontWeight={600}>
+                            <Typography variant="subtitle1" fontWeight={600}>
                                 {user?.firstName} {user?.lastName}
+                            </Typography>
+                            <Typography variant="subtitle2" color="text.secondary">
+                                Admin Id: {user?.adminId}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                                 {user?.emailId}

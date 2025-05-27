@@ -33,6 +33,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { addExpenses, getAllExpenses } from '../../../features/expense/expenseSlice';
 import { useDispatch, useSelector } from 'react-redux';
+import Inventory2Icon from '@mui/icons-material/Inventory2';
+
 const modalStyle = {
     position: 'absolute',
     top: '50%',
@@ -177,7 +179,11 @@ const ExpensesCard = () => {
                                     <TableCell>{expense.date}</TableCell>
                                     <TableCell>{expense.name}</TableCell>
                                     <TableCell>₹{expense.taxableAmount}</TableCell>
-                                    <TableCell>{expense.receiving}</TableCell>
+                                    <TableCell>
+                                        <IconButton size='small' color='primary' title='invoice'>
+                                            <Inventory2Icon fontSize='small' />
+                                        </IconButton>
+                                    </TableCell>
                                     <TableCell>
                                         <Box sx={{ display: 'flex', gap: 1 }}>
                                             <IconButton size="small" color="primary" title="View">

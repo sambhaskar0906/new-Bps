@@ -40,6 +40,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import { useDispatch, useSelector } from 'react-redux';
 import { bookingRequestCount, activeBookingCount, cancelledBookingCount, fetchBookingsByType, cancelBooking, deleteBooking, revenueList } from '../../../features/booking/bookingSlice'
+import SendIcon from '@mui/icons-material/Send';
 
 
 const createData = (id, orderby, date, namep, pickup, named, drop, contact) => ({
@@ -460,6 +461,13 @@ const BookingCard = () => {
                               title="Delete"
                             >
                               <DeleteIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              title="share"
+                            >
+                              <SendIcon fontSize="small" />
                             </IconButton>
                           </Box>
                         </TableCell>
