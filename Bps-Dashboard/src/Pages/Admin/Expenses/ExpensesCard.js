@@ -48,6 +48,10 @@ const modalStyle = {
 };
 
 const ExpensesCard = () => {
+    const [selectedExpense, setSelectedExpense] = useState(null);
+    const [modalMode, setModalMode] = useState('view');
+    const [viewEditOpen, setViewEditOpen] = useState(false);
+
     const [searchExpense, setSearchExpense] = useState('');
     const [open, setOpen] = useState(false);
     const dispatch = useDispatch();
@@ -180,22 +184,110 @@ const ExpensesCard = () => {
                                     <TableCell>{expense.name}</TableCell>
                                     <TableCell>₹{expense.taxableAmount}</TableCell>
                                     <TableCell>
-                                        <IconButton size='small' color='primary' title='invoice'>
+                                        <IconButton
+                                            size='small'
+                                            color='primary'
+                                            title='Invoice'
+                                            onClick={() => {
+                                                const fixedPath = expense.receiving.replace(/\\/g, '/');
+                                                const fileUrl = `http://localhost:8000/${fixedPath}`;
+                                                window.open(fileUrl, '_blank');
+                                            }}
+                                        >
                                             <Inventory2Icon fontSize='small' />
                                         </IconButton>
                                     </TableCell>
                                     <TableCell>
                                         <Box sx={{ display: 'flex', gap: 1 }}>
-                                            <IconButton size="small" color="primary" title="View">
+                                            <IconButton
+                                                size="small"
+                                                color="primary"
+                                                title="View"
+                                                onClick={() => {
+                                                    setSelectedExpense(expense);
+                                                    setModalMode('view');
+                                                    setViewEditOpen(true);
+                                                }}
+                                            >
                                                 <VisibilityIcon fontSize="small" />
                                             </IconButton>
-                                            <IconButton size="small" color="primary">
+
+                                            <IconButton
+                                                size="small"
+                                                color="primary"
+                                                title="Edit"
+                                                onClick={() => {
+                                                    setSelectedExpense(expense);
+                                                    setModalMode('edit');
+                                                    setViewEditOpen(true);
+                                                }}
+                                            >
                                                 <EditIcon fontSize="small" />
                                             </IconButton>
                                             <IconButton size="small" color="error">
                                                 <DeleteIcon fontSize="small" />
                                             </IconButton>
                                         </Box>
+
+                                        <Modal open={viewEditOpen} onClose={() => setViewEditOpen(false)}>
+                                            <Box sx={modalStyle}>
+                                                <Typography variant="h6" mb={2}>
+                                                    {modalMode === 'view' ? 'View Expense' : 'Edit Expense'}
+                                                </Typography>
+                                                <Stack spacing={2}>
+                                                    <TextField
+                                                        label="Date"
+                                                        type="date"
+                                                        value={selectedExpense?.date?.slice(0, 10) || ''}
+                                                        fullWidth
+                                                        InputLabelProps={{ shrink: true }}
+                                                        InputProps={{ readOnly: modalMode === 'view' }}
+                                                    />
+                                                    <TextField
+                                                        label="Invoice No"
+                                                        value={selectedExpense?.invoiceNo || ''}
+                                                        fullWidth
+                                                        InputProps={{ readOnly: modalMode === 'view' }}
+                                                    />
+                                                    <TextField
+                                                        label="Title"
+                                                        value={selectedExpense?.title || ''}
+                                                        fullWidth
+                                                        InputProps={{ readOnly: modalMode === 'view' }}
+                                                    />
+                                                    <TextField
+                                                        label="Details"
+                                                        value={selectedExpense?.details || ''}
+                                                        fullWidth
+                                                        InputProps={{ readOnly: modalMode === 'view' }}
+                                                    />
+                                                    <TextField
+                                                        label="Amount"
+                                                        value={selectedExpense?.amount || ''}
+                                                        fullWidth
+                                                        InputProps={{ readOnly: modalMode === 'view' }}
+                                                    />
+                                                    <TextField
+                                                        label="Tax Amount"
+                                                        value={selectedExpense?.taxAmount || ''}
+                                                        fullWidth
+                                                        InputProps={{ readOnly: modalMode === 'view' }}
+                                                    />
+                                                    <TextField
+                                                        label="Total Amount"
+                                                        value={selectedExpense?.totalAmount || ''}
+                                                        fullWidth
+                                                        InputProps={{ readOnly: modalMode === 'view' }}
+                                                    />
+                                                    {modalMode === 'edit' && (
+                                                        <Button variant="contained" color="primary">
+                                                            Update
+                                                        </Button>
+                                                    )}
+                                                </Stack>
+                                            </Box>
+                                        </Modal>
+
                                     </TableCell>
                                 </TableRow>
                             ))
