@@ -8,7 +8,8 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Button
+    Button,
+    IconButton
 } from '@mui/material';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import { useDispatch, useSelector } from 'react-redux';
@@ -17,7 +18,8 @@ import { fetchBookingsByType } from '../../../features/booking/bookingSlice';
 import { fetchBookingRequest as fetchQuotationRequest } from '../../../features/quotation/quotationSlice';
 import { fetchavailableList } from '../../../features/Driver/driverSlice';
 import { getAvailableVehiclesList } from '../../../features/vehicle/vehicleSlice';
-import { assignDeliveries } from '../../../features/delivery/deliverySlice';
+import { assignDeliveries, finalDeliveryList } from '../../../features/delivery/deliverySlice';
+import SendIcon from '@mui/icons-material/Send';
 
 const DeliveryCard = () => {
     const dispatch = useDispatch();
@@ -25,7 +27,7 @@ const DeliveryCard = () => {
     const { requestCount: quotationRequestCountValue, list: quotationList, loading: quotationLoading } = useSelector((state) => state.quotations);
     const { list: driverList = [] } = useSelector((state) => state.drivers);
     const { list: vehicleList = [] } = useSelector((state) => state.vehicles);
-    const { list: finalDeliveryList = [] } = useSelector((state) => state.deliveries);
+    const { list: finalList } = useSelector((state) => state.deliveries);
 
     const [selectedCard, setSelectedCard] = useState('booking');
     const [selectedItems, setSelectedItems] = useState({ booking: [], quotation: [], final: [] });
@@ -40,7 +42,7 @@ const DeliveryCard = () => {
         dispatch(getAvailableVehiclesList());
         dispatch(fetchavailableList());
 
-        // dispatch(fetchFinalDeliveries());
+        dispatch(finalDeliveryList());
     }, [dispatch]);
 
     const handleCardClick = (type) => {
@@ -85,25 +87,25 @@ const DeliveryCard = () => {
     const cards = [
         {
             key: 'booking',
-            count: bookingRequestCountValue || bookingList.length || 0,
+            count: bookingRequestCountValue ?? bookingList?.length ?? 0,
             subtitle: 'Booking Delivery',
             stat: '20% (30 days)'
         },
         {
             key: 'quotation',
-            count: quotationRequestCountValue || quotationList.length || 0,
+            count: quotationRequestCountValue ?? quotationList?.length ?? 0,
             subtitle: 'Quotations Delivery',
             stat: 'NaN% (30 days)'
         },
         {
             key: 'final',
-            count: finalDeliveryList.length || 0,
+            count: finalList?.length ?? 0,
             subtitle: 'Final Delivery',
             stat: 'NaN% (30 days)'
         }
     ];
 
-    const currentList = selectedCard === 'quotation' ? quotationList : selectedCard === 'final' ? finalDeliveryList : bookingList;
+    const currentList = selectedCard === 'quotation' ? quotationList : selectedCard === 'final' ? finalList : bookingList;
     const currentLoading = selectedCard === 'quotation' ? quotationLoading : selectedCard === 'final' ? false : bookingLoading;
 
     return (
@@ -204,78 +206,81 @@ const DeliveryCard = () => {
                 sx={{
                     display: 'grid',
                     gridTemplateColumns: selectedCard === 'final'
-                        ? '60px 60px 1fr 1fr 1fr 1fr 1fr 1fr'
-                        : '60px 60px 1fr 1fr 1fr 1fr',
+                        ? '60px 160px 160px 160px 1fr 1fr 1fr'
+                        : '60px 160px 1fr 1fr 1fr 1fr',
                     backgroundColor: '#1976d2',
                     padding: 2,
                     borderRadius: 2,
                     color: 'white',
                     fontWeight: 600,
                     mt: 2,
-                    gap: 1 // adds spacing between columns
+                    gap: 1,
                 }}
             >
-                <Typography variant="body2" fontWeight={600}>
-                    Select
-                </Typography>
-                <Typography variant="body2" fontWeight={600}>
-                    S. No
-                </Typography>
-                <Typography variant="body2" fontWeight={600}>
-                    Order ID
-                </Typography>
-                <Typography variant="body2" fontWeight={600}>
-                    Name
-                </Typography>
-                {selectedCard === 'final' && (
-                    <>
-                        <Typography variant="body2" fontWeight={600}>
-                            Driver
-                        </Typography>
-                        <Typography variant="body2" fontWeight={600}>
-                            Vehicle
-                        </Typography>
-                    </>
+                {selectedCard !== 'final' && (
+                    <Typography variant="body2" fontWeight={600}>Select</Typography>
                 )}
-                <Typography variant="body2" fontWeight={600}>
-                    Start Station
-                </Typography>
-                <Typography variant="body2" fontWeight={600}>
-                    Destination Station
-                </Typography>
+                <Typography variant="body2" fontWeight={600}>S. No</Typography>
+                <Typography variant="body2" fontWeight={600}>Order ID</Typography>
+                {selectedCard === 'final' ? (
+                    <>
+                        <Typography variant="body2" fontWeight={600}>Driver</Typography>
+                        <Typography variant="body2" fontWeight={600}>Vehicle</Typography>
+                    </>
+                ) : (
+                    <Typography variant="body2" fontWeight={600}>Name</Typography>
+                )}
+                <Typography variant="body2" fontWeight={600}>Start Station</Typography>
+                <Typography variant="body2" fontWeight={600}>Destination Station</Typography>
+                {selectedCard === 'final' && (
+                    <Typography variant="body2" fontWeight={600} textAlign={'center'}>Action</Typography>
+                )}
             </Box>
 
-            {/* Table Body */}
             {currentLoading ? (
                 <Typography sx={{ mt: 2 }}>Loading...</Typography>
             ) : currentList?.length > 0 ? (
                 currentList.map((item, idx) => {
                     const uniqueId = item._id || item.bookingId || item['Booking ID'] || `index-${idx}`;
                     return (
-                        <Box key={uniqueId} sx={{
-                            display: 'grid',
-                            gridTemplateColumns: selectedCard === 'final'
-                                ? '80px 80px 1fr 1fr 1fr 1fr 1fr 1fr'
-                                : '80px 80px 1fr 1fr 1fr 1fr',
-                            padding: 2,
-                            borderBottom: '1px solid #e0e0e0',
-                            alignItems: 'center'
-                        }}>
-                            <input
-                                type="checkbox"
-                                checked={selectedItems[selectedCard]?.includes(uniqueId)}
-                                onChange={() => handleCheckboxChange(uniqueId)}
-                            />
+                        <Box
+                            key={uniqueId}
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: selectedCard === 'final'
+                                    ? '60px 160px 160px 160px 1fr 1fr 1fr'
+                                    : '60px 160px 1fr 1fr 1fr 1fr',
+                                padding: 2,
+                                borderBottom: '1px solid #e0e0e0',
+                                alignItems: 'center',
+                                gap: 1
+                            }}
+                        >
+                            {selectedCard !== 'final' && (
+                                <input
+                                    type="checkbox"
+                                    checked={selectedItems[selectedCard]?.includes(uniqueId)}
+                                    onChange={() => handleCheckboxChange(uniqueId)}
+                                    disabled={selectedCard === 'delivery'}
+                                />
+                            )}
+
                             <Typography>{idx + 1}</Typography>
-                            <Typography>{item.bookingId || item['Booking ID']}</Typography>
-                            <Typography>{item.fromName || item.Name}</Typography>
+                            <Typography>{item.orderId || item.bookingId || item['Booking ID']}</Typography>
+                            {selectedCard === 'final' ? (
+                                <>
+                                    <Typography>{item.driverName || 'N/A'}</Typography>
+                                    <Typography>{item.vehicle.vehicleModel || 'N/A'}</Typography>
+                                </>
+                            ) : (
+                                <Typography>{item.fromName || item.Name}</Typography>
+                            )}
                             <Typography>{item.pickup || item['Pick up']}</Typography>
                             <Typography>{item.drop || item.Drop}</Typography>
                             {selectedCard === 'final' && (
-                                <>
-                                    <Typography>{item.driverName || 'N/A'}</Typography>
-                                    <Typography>{item.vehicleModel || 'N/A'}</Typography>
-                                </>
+                                <IconButton>
+                                    <SendIcon color='primary' />
+                                </IconButton>
                             )}
                         </Box>
                     );
@@ -285,6 +290,7 @@ const DeliveryCard = () => {
                     {selectedCard === 'final' ? 'No final deliveries found.' : 'No bookings found.'}
                 </Typography>
             )}
+
         </Box>
     );
 };
