@@ -13,18 +13,52 @@ export const assignDeliveries = createAsyncThunk(
         bookingIds,
         quotationIds,
         driverName,
-        vehicleModel, 
+        vehicleModel,
       });
       return response.data.data;
     } catch (error) {
-      console.log("error",error.response?.data?.message);
+      console.log("error", error.response?.data?.message);
       return rejectWithValue(
-        
+
         error.response?.data?.message || 'Failed to assign deliveries'
       );
     }
   }
 );
+
+export const finalDeliveryList = createAsyncThunk(
+  'finalDelivery/list', async (_, thunkApi) => {
+    try {
+      const res = await axios.get(`${BASE_URL}/final/list`);
+      return res.data.data;
+    }
+    catch (err) {
+      return thunkApi.rejectWithValue(err.response?.message?.data);
+    }
+  }
+)
+export const finalDeliveryMail = createAsyncThunk(
+  'finalDelivery/mail', async (orderId, thunkApi) => {
+    try {
+      const res = await axios.post(`${BASE_URL}/send-booking-email/${orderId}`);
+      return res.data;
+    }
+    catch (err) {
+      return thunkApi.rejectWithValue(err.response?.message?.data);
+    }
+  }
+)
+export const finalDeliveryWhatsApp = createAsyncThunk(
+  'finalDelivery/whatsapp', async (orderId, thunkApi) => {
+    try {
+      const res = await axios.post(`http://localhost:8000/api/whatsapp/send-final-delivery/${orderId}`);
+      return res.data;
+    }
+    catch (err) {
+      return thunkApi.rejectWithValue(err.response?.message?.data);
+    }
+  }
+)
 const deliverySlice = createSlice({
   name: 'delivery',
   initialState: {
@@ -46,8 +80,47 @@ const deliverySlice = createSlice({
       .addCase(assignDeliveries.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      });
+      })
+      .addCase(finalDeliveryList.pending, (state) => {
+        state.loading = true;
+        state.false = null
+      })
+      .addCase(finalDeliveryList.fulfilled, (state, action) => {
+        state.loading = false;
+        state.list = action.payload
+      })
+      .addCase(finalDeliveryList.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload
+      })
+      .addCase(finalDeliveryMail.pending, (state) => {
+        state.loading = true;
+        state.error = null
+      })
+      .addCase(finalDeliveryMail.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null
+      })
+      .addCase(finalDeliveryMail.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(finalDeliveryWhatsApp.pending, (state, action) => {
+        state.loading = true;
+        state.error = false;
+      })
+      .addCase(finalDeliveryWhatsApp.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null
+      })
+      .addCase(finalDeliveryWhatsApp.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      ;
   },
 });
+
 
 export default deliverySlice.reducer;

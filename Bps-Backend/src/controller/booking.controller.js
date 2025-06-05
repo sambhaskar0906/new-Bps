@@ -3,7 +3,8 @@ import Station from '../model/manageStation.model.js';
 import { Customer } from '../model/customer.model.js';
 import nodemailer from 'nodemailer';
 import { User } from '../model/user.model.js'
-
+import { sendBookingConfirmation } from './whatsappController.js'
+import { sendWhatsAppMessage } from '../services/whatsappServices.js'
 async function resolveStation(name) {
   const station = await Station.findOne({ stationName: new RegExp(`^${name}$`, 'i') });
   if (!station) throw new Error(`Station "${name}" not found`);
@@ -75,7 +76,6 @@ export const viewBooking = async (req, res) => {
  * POST /api/bookings
  */
 export const createBooking = async (req, res) => {
-
   try {
     const user = req.user;
     const {
@@ -170,7 +170,6 @@ export const createBooking = async (req, res) => {
 
     // Send booking confirmation email to customer
     await sendBookingEmail(customer.emailId, booking);
-
     // Send success response
     res.status(201).json({ message: "Booking created successfully", booking });
   } catch (err) {
@@ -367,6 +366,37 @@ export const sendBookingEmail = async (email, booking) => {
   }
 };
 
+export const sendBookingEmailById = async (req, res) => {
+  const { bookingId } = req.params;
+
+  try {
+    // Populate the 'customerId' field with email and name
+    const booking = await Booking.findOne({ bookingId }).populate('customerId', 'emailId firstName lastName');
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    // Check populated customer data
+    const customer = booking.customerId;
+
+    if (!customer?.emailId) {
+      return res.status(400).json({ message: 'Customer email not available' });
+    }
+
+    // Send the email
+    await sendBookingEmail(customer.emailId, {
+      ...booking.toObject(),
+      firstName: customer.firstName,
+      lastName: customer.lastName
+    });
+
+    res.status(200).json({ message: 'Booking confirmation email sent successfully' });
+  } catch (error) {
+    console.error('Error sending booking email by ID:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
 
 
@@ -443,6 +473,7 @@ export const getBookingStatusList = async (req, res) => {
 
       filter = {
         activeDelivery: false,
+        isDelivered: { $ne: true },
         totalCancelled: 0,
         $or: [
           { createdByRole: { $in: ['admin', 'supervisor'] } }, // Always include bookings created by admin/supervisor
@@ -464,7 +495,7 @@ export const getBookingStatusList = async (req, res) => {
 
     const bookings = await Booking.find(filter)
 
-      .select('bookingId firstName lastName senderName receiverName bookingDate mobile startStation endStation')
+      .select('bookingId firstName lastName senderName receiverName bookingDate mobile startStation endStation requestedByRole')
       .populate('startStation endStation', 'stationName')
       .populate('createdByRole', ' role')
       .lean();
@@ -474,7 +505,10 @@ export const getBookingStatusList = async (req, res) => {
 
     const data = validBookings.map((b, i) => ({
       SNo: i + 1,
-      orderBy: b.createdByRole || 'N/A',
+      orderBy:
+        b.requestedByRole === 'public'
+          ? 'Third Party'
+          : b.createdByRole || 'N/A',
       date: b.bookingDate?.toISOString().slice(0, 10) || 'N/A',
       fromName: b.senderName || 'N/A',
       pickup: b.startStation?.stationName || 'N/A',
@@ -571,9 +605,9 @@ export const cancelBooking = async (req, res) => {
 export const getBookingRevenueList = async (req, res) => {
   try {
     const user = req.user;
-    const filter = getBookingFilterByType('request', user); // Use shared logic
 
-    const bookings = await Booking.find(filter)
+
+    const bookings = await Booking.find(req.roleQueryFilter)
       .select('bookingId bookingDate startStation endStation grandTotal')
       .populate('startStation endStation', 'stationName')
       .lean();

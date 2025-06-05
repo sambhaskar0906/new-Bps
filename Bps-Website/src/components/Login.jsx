@@ -15,10 +15,105 @@ import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, fetchUserProfile } from '../features/loginSlice';
 import { useNavigate } from 'react-router-dom';
 import loginImage from '../assets/BoxMan.svg';
+import {
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+} from '@mui/material';
+import { sendResetCode, changePassword } from '../features/loginSlice';
+
 
 const Login = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const [openForgotModal, setOpenForgotModal] = useState(false);
+    const [step, setStep] = useState(1);
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [otp, setOtp] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [forgotError, setForgotError] = useState(null);
+    const [forgotLoading, setForgotLoading] = useState(false);
+    const [forgotSuccess, setForgotSuccess] = useState(false);
+
+
+    const { resetStatus } = useSelector((state) => state.auth);
+
+    const handleForgotPassword = () => {
+        setOpenForgotModal(true);
+        setStep(1);
+        setForgotError(null);
+        setForgotSuccess(false);
+    };
+
+    const handleCloseForgotModal = () => {
+        setOpenForgotModal(false);
+        setForgotEmail('');
+        setOtp('');
+        setNewPassword('');
+        setForgotError(null);
+        setForgotSuccess(false);
+    };
+
+    const handleForgotSubmit = async () => {
+        if (!forgotEmail) {
+            setForgotError('Please enter your email');
+            return;
+        }
+
+        setForgotLoading(true);
+        setForgotError(null);
+
+        try {
+            await dispatch(sendResetCode({ emailId: forgotEmail })).unwrap();
+            setForgotLoading(false);
+            setStep(2); // move to OTP step
+            setForgotSuccess(true);
+        } catch (error) {
+            setForgotLoading(false);
+            setForgotError(error.message || 'Failed to send reset code');
+        }
+    };
+
+    // Step 2: Verify OTP (just move to next step here)
+    const handleVerifyOtp = () => {
+        if (!otp) {
+            setForgotError('Please enter the OTP');
+            return;
+        }
+        setForgotError(null);
+        setStep(3); // Just move to the final step
+    };
+
+    // Step 3: Change password API call
+    const handleChangePassword = async () => {
+        if (!newPassword) {
+            setForgotError('Please enter a new password');
+            return;
+        }
+
+        setForgotLoading(true);
+        setForgotError(null);
+
+        try {
+            await dispatch(changePassword({
+                emailId: forgotEmail,
+                code: otp,
+                newPassword,
+            })).unwrap();
+
+            setForgotLoading(false);
+            setForgotSuccess(true);
+            setTimeout(() => {
+                handleCloseForgotModal();
+            }, 1500);
+        } catch (error) {
+            setForgotLoading(false);
+            setForgotError(error.message || 'Failed to reset password');
+        }
+    };
+
+
 
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({ emailId: '', password: '' });
@@ -151,6 +246,114 @@ const Login = () => {
                             Log In
                         </Button>
                     </form>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            textAlign: 'right',
+                            mt: 1,
+                            color: 'primary.main',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                        }}
+                        onClick={handleForgotPassword}
+                    >
+                        Forgot Password?
+                    </Typography>
+
+                    <Dialog open={openForgotModal} onClose={handleCloseForgotModal} maxWidth="xs" fullWidth>
+                        <DialogTitle>Forgot Password</DialogTitle>
+                        <DialogContent>
+                            {forgotError && <Alert severity="error" sx={{ mb: 2 }}>{forgotError}</Alert>}
+                            {forgotSuccess && step === 1 && (
+                                <Alert severity="success" sx={{ mb: 2 }}>
+                                    OTP sent! Please check your email.
+                                </Alert>
+                            )}
+                            {forgotSuccess && step === 3 && (
+                                <Alert severity="success" sx={{ mb: 2 }}>
+                                    Password reset successful! Closing...
+                                </Alert>
+                            )}
+
+                            {step === 1 && (
+                                <>
+                                    <Typography>Please enter your registered email:</Typography>
+                                    <TextField
+                                        fullWidth
+                                        margin="normal"
+                                        label="Email"
+                                        type="email"
+                                        value={forgotEmail}
+                                        onChange={(e) => setForgotEmail(e.target.value)}
+                                        disabled={forgotLoading}
+                                    />
+                                </>
+                            )}
+
+                            {step === 2 && (
+                                <>
+                                    <Typography>Please enter the OTP sent to your email:</Typography>
+                                    <TextField
+                                        fullWidth
+                                        margin="normal"
+                                        label="OTP"
+                                        value={otp}
+                                        onChange={(e) => setOtp(e.target.value)}
+                                        disabled={forgotLoading}
+                                    />
+                                </>
+                            )}
+
+                            {step === 3 && (
+                                <>
+                                    <Typography>Set your new password:</Typography>
+                                    <TextField
+                                        fullWidth
+                                        margin="normal"
+                                        label="New Password"
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        disabled={forgotLoading}
+                                    />
+                                </>
+                            )}
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={handleCloseForgotModal} disabled={forgotLoading}>Cancel</Button>
+
+                            {step === 1 && (
+                                <Button
+                                    onClick={handleForgotSubmit}
+                                    variant="contained"
+                                    disabled={forgotLoading}
+                                    startIcon={forgotLoading ? <CircularProgress size={20} /> : null}
+                                >
+                                    Send OTP
+                                </Button>
+                            )}
+                            {step === 2 && (
+                                <Button
+                                    onClick={handleVerifyOtp}
+                                    variant="contained"
+                                    disabled={forgotLoading}
+                                >
+                                    Verify OTP
+                                </Button>
+                            )}
+                            {step === 3 && (
+                                <Button
+                                    onClick={handleChangePassword}
+                                    variant="contained"
+                                    disabled={forgotLoading}
+                                    startIcon={forgotLoading ? <CircularProgress size={20} /> : null}
+                                >
+                                    Reset Password
+                                </Button>
+                            )}
+                        </DialogActions>
+                    </Dialog>
+
                 </Box>
 
                 {/* Right - Image */}

@@ -104,18 +104,40 @@ export const updateBookingById = createAsyncThunk(
 
 export const revenueList = createAsyncThunk(
   'revenueList/booking', async (_, thunkApi) => {
-  try {
-    const res = await axios.get(`${BASE_URL}/revenue-list`);
-    return {
-      totalRevenue: res.data.totalRevenue,
-      revenueList: res.data.data
+    try {
+      const res = await axios.get(`${BASE_URL}/revenue-list`);
+      return {
+        totalRevenue: res.data.totalRevenue,
+        revenueList: res.data.data
+      }
+    }
+    catch (err) {
+      return thunkApi.rejectWithValue(err.response?.data?.message || 'failed to view totalReveunue')
     }
   }
-  catch (err) {
-    return thunkApi.rejectWithValue(err.response?.data?.message || 'failed to view totalReveunue')
-  }
-}
 
+)
+export const sendBookingEmail = createAsyncThunk(
+  'sendBooking/mail', async (bookingId, thunkApi) => {
+    try {
+      const res = await axios.get(`${BASE_URL}/send-Booking-Email/${bookingId}`);
+      return res.data;
+    }
+    catch (err) {
+      return thunkApi.rejectWithValue(err.response?.data?.message || 'Failed to send booking Id');
+    }
+  }
+)
+export const sendWhatsAppMsg = createAsyncThunk(
+  'bookingMail/whatsApp', async (bookingId, thunkApi) => {
+    try {
+      const res = await axios.post(`http://localhost:8000/api/whatsapp/send-booking-Quotation/${bookingId}`);
+      return res.data;
+    }
+    catch (err) {
+      return thunkApi.rejectWithValue(err?.response?.data?.message);
+    }
+  }
 )
 const initialState = {
   list: [],
@@ -279,6 +301,31 @@ const quotationSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      .addCase(sendBookingEmail.pending, (state) => {
+        state.loading = true;
+        state.error = null
+      })
+      .addCase(sendBookingEmail.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null
+      })
+      .addCase(sendBookingEmail.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload
+      })
+      .addCase(sendWhatsAppMsg.pending, (state) => {
+        state.loading = true;
+        state.error = null
+      })
+      .addCase(sendWhatsAppMsg.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null
+      })
+      .addCase(sendWhatsAppMsg.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload
+      })
+
   }
 })
 export const { setFormField, resetForm, addBooking, setBooking, clearViewedBooking } = quotationSlice.actions;

@@ -2,68 +2,68 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
 const driverSchema = new mongoose.Schema({
-    firstName :{
-        type:String,
-        required:true
+    firstName: {
+        type: String,
+        required: true
     },
-    middleName:{
-        type:String       
+    middleName: {
+        type: String
     },
-    lastName:{
-        type:String,
-        required:true
+    lastName: {
+        type: String,
+        required: true
     },
-    contactNumber:{
-        type:Number,
-        required:true
+    contactNumber: {
+        type: Number,
+        required: true
     },
-    emailId:{
-        type:String,
-        required:true,
-        unique:true
+    emailId: {
+        type: String,
+        required: true,
+        unique: true
     },
-    password:{
-        type:String,
-        required:true,
-        minLength:[6,"Password should be at least of 6 length"]
+    password: {
+        type: String,
+        required: true,
+        minLength: [6, "Password should be at least of 6 length"]
     },
-    address:{
-        type:String,
-        required:true
+    address: {
+        type: String,
+        required: true
     },
-    district:{
-        type:String,
-        
+    district: {
+        type: String,
+
     },
-    pincode:{
-        type:String,
-        
+    pincode: {
+        type: String,
+
     },
-    state:{
-        type:String,
-        required:true
+    state: {
+        type: String,
+        required: true
     },
-    city:{
-        type:String,
-        required:true
+    city: {
+        type: String,
+        required: true
     },
-    dlNumber:{
-        type:String,
-        required:true,
-        unique:true
+    dlNumber: {
+        type: String,
+        required: true,
+        unique: true
     },
-    idProof:{
-        type:String,
-        required:true,
-        unique:true
+    idProof: {
+        type: String,
+        required: true,
+        unique: true
     },
-    idProofPhoto:{
-        type:String,
-        required:true
+    idProofPhoto: {
+        type: String,
+        required: true
     },
-    driverProfilePhoto:{
-        type:String,
-        required:true
+    driverProfilePhoto: {
+        type: String,
+        required: true
     },
     driverId: {
         type: String,
@@ -80,8 +80,13 @@ const driverSchema = new mongoose.Schema({
     isDeactived: {
         type: Boolean,
         default: false
-    }
-    
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+    },
+
 }, { timestamps: true });
 
 driverSchema.pre("save", async function (next) {

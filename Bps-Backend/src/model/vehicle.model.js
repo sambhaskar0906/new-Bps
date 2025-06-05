@@ -40,7 +40,7 @@ const VehicleSchema = new mongoose.Schema({
   },
   PurchasedUnder: {
     type: String,
-    required: true 
+    required: true
   },
   purchasePrice: {
     type: Number,
@@ -66,7 +66,7 @@ const VehicleSchema = new mongoose.Schema({
   },
   policyType: {
     type: String,
-    required: true 
+    required: true
   },
   policyStartDate: {
     type: Date,
@@ -114,8 +114,13 @@ const VehicleSchema = new mongoose.Schema({
   isBlacklisted: {
     type: Boolean,
     default: false
-  }
-}, {timestamps: true });
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+}, { timestamps: true });
 
 VehicleSchema.pre("save", async function (next) {
   if (!this.vehicleId) {

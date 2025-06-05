@@ -37,9 +37,10 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   fetchBookingRequest,
   fetchActiveBooking,
-  fetchCancelledBooking, deleteBooking
+  fetchCancelledBooking, deleteBooking, sendWhatsAppMsg, sendBookingEmail, revenueList
 } from "../../../features/quotation/quotationSlice";
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import { Snackbar, Alert } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 
 function descendingComparator(a, b, orderBy) {
@@ -90,10 +91,16 @@ const QuotationCard = () => {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedList, setSelectedList] = useState("request");
+  const [openSnackbar, setOpenSnackbar] = useState(false);
 
-  const { list: bookingList = [], requestCount, activeDeliveriesCount, cancelledDeliveriesCount } =
+  const { list: bookingList = [], requestCount, activeDeliveriesCount, cancelledDeliveriesCount, totalRevenue } =
     useSelector((state) => state.quotations);
-
+  useEffect(() => {
+    dispatch(fetchBookingRequest());
+    dispatch(fetchCancelledBooking());
+    dispatch(fetchActiveBooking());
+    dispatch(revenueList());
+  }, [dispatch])
   useEffect(() => {
     switch (selectedList) {
       case "request":
@@ -104,6 +111,9 @@ const QuotationCard = () => {
         break;
       case "cancelled":
         dispatch(fetchCancelledBooking());
+        break;
+      case "reveune":
+        dispatch(revenueList());
         break;
       default:
         break;
@@ -138,7 +148,11 @@ const QuotationCard = () => {
     setPage(0);
   };
 
-
+  const handleSend = (bookingId) => {
+    dispatch(sendWhatsAppMsg(bookingId))
+    dispatch(sendBookingEmail(bookingId))
+    setOpenSnackbar(true);
+  }
   const filteredRows = Array.isArray(bookingList)
     ? bookingList.filter((row) => {
       return (
@@ -181,10 +195,10 @@ const QuotationCard = () => {
     },
     {
       id: "revenue",
-      title: "0.00",
-      value: "Rs.",
+      value: totalRevenue,
       subtitle: "Total Revenue",
       duration: "100% (30 Days)",
+      type: "reveune",
       icon: <AccountBalanceWalletIcon fontSize="large" />,
     },
   ];
@@ -320,12 +334,12 @@ const QuotationCard = () => {
                 .map((row, index) => (
                   <TableRow key={row._id || index} hover>
                     <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-                    <TableCell>{row.order}</TableCell>
+                    <TableCell>{row.orderBy}</TableCell>
                     <TableCell>{row.Date}</TableCell>
                     <TableCell>{row.Name}</TableCell>
-                    <TableCell>{row["Pick up"]}</TableCell>
+                    <TableCell>{row.pickup}</TableCell>
                     <TableCell>{row["Name (Drop)"]}</TableCell>
-                    <TableCell>{row.Drop}</TableCell>
+                    <TableCell>{row.drop}</TableCell>
                     <TableCell>{row.Contact}</TableCell>
                     <TableCell>
                       <Box sx={{ display: "flex", gap: 1 }}>
@@ -348,9 +362,19 @@ const QuotationCard = () => {
                           <DeleteIcon fontSize="small" />
                         </IconButton>
                         <IconButton size="small" color="primary">
-                          <SendIcon fontSize="small" />
+                          <SendIcon fontSize="small" onClick={() => { handleSend(row['Booking ID']) }} />
                         </IconButton>
                       </Box>
+                      <Snackbar
+                        open={openSnackbar}
+                        autoHideDuration={3000}
+                        onClose={() => setOpenSnackbar(false)}
+                        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                      >
+                        <Alert onClose={() => setOpenSnackbar(false)} severity="success" variant="filled" sx={{ width: '100%' }}>
+                          Share link sent via WhatsApp and Email!
+                        </Alert>
+                      </Snackbar>
                     </TableCell>
                   </TableRow>
                 ))}

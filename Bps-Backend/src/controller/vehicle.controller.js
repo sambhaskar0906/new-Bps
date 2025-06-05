@@ -16,7 +16,7 @@ const formatVehicleDetails = (vehicles) => {
 
 // CREATE Vehicle
 export const createVehicle = asyncHandler(async (req, res) => {
-  console.log("Reg body:", req.body);
+
   const {
     registrationDate,
     regExpiryDate,
@@ -78,7 +78,7 @@ export const createVehicle = asyncHandler(async (req, res) => {
     renewalDate,
     renewalValidUpto,
     addcomment,
-    
+    createdBy: req.user._id,
   });
 
   return res
@@ -88,7 +88,7 @@ export const createVehicle = asyncHandler(async (req, res) => {
 
 // GET All Vehicles
 export const getAllVehicles = asyncHandler(async (req, res) => {
-  const vehicles = await Vehicle.find();
+  const vehicles = await Vehicle.find(req.vehicleQueryFilter);
 
   const vehicleList = formatVehicleDetails(vehicles);  // Using the helper function
 
@@ -146,7 +146,7 @@ export const updateVehicle = asyncHandler(async (req, res) => {
 // DELETE Vehicle
 export const deleteVehicle = asyncHandler(async (req, res) => {
   const { vehicleId } = req.params;
-  const deleted = await Vehicle.findOneAndDelete({vehicleId});
+  const deleted = await Vehicle.findOneAndDelete({ vehicleId });
 
   if (!deleted) throw new ApiError(404, "Vehicle not found");
 
@@ -157,7 +157,7 @@ export const deleteVehicle = asyncHandler(async (req, res) => {
 
 // GET Total Vehicle Count
 export const getTotalVehiclesCount = asyncHandler(async (req, res) => {
-  const totalVehicles = await Vehicle.countDocuments();
+  const totalVehicles = await Vehicle.countDocuments(req.vehicleQueryFilter);
 
   return res
     .status(200)
@@ -167,6 +167,7 @@ export const getTotalVehiclesCount = asyncHandler(async (req, res) => {
 // GET Available Vehicle Count
 export const getAvailableVehiclesCount = asyncHandler(async (req, res) => {
   const availableVehicles = await Vehicle.countDocuments({
+    ...req.vehicleQueryFilter,
     isActive: true,
     isBlacklisted: false
   });
@@ -179,6 +180,7 @@ export const getAvailableVehiclesCount = asyncHandler(async (req, res) => {
 // GET Deactivated Vehicle Count
 export const getDeactivatedVehiclesCount = asyncHandler(async (req, res) => {
   const deactivatedVehicles = await Vehicle.countDocuments({
+    ...req.vehicleQueryFilter,
     isActive: false
   });
 
@@ -190,6 +192,7 @@ export const getDeactivatedVehiclesCount = asyncHandler(async (req, res) => {
 // GET Blacklisted Vehicle Count
 export const getBlacklistedVehiclesCount = asyncHandler(async (req, res) => {
   const blacklistedVehicles = await Vehicle.countDocuments({
+    ...req.vehicleQueryFilter,
     isBlacklisted: true
   });
 
@@ -201,6 +204,7 @@ export const getBlacklistedVehiclesCount = asyncHandler(async (req, res) => {
 // GET Blacklisted Vehicles (List 
 export const getBlacklistedVehicles = asyncHandler(async (req, res) => {
   const blacklistedVehicles = await Vehicle.find({
+    ...req.vehicleQueryFilter,
     isBlacklisted: true
   })
     .select('vehicleId currentLocation ownedBy vehicleModel')  // Selecting only the fields needed
@@ -216,6 +220,7 @@ export const getBlacklistedVehicles = asyncHandler(async (req, res) => {
 // GET Deactivated Vehicles (List )
 export const getDeactivatedVehicles = asyncHandler(async (req, res) => {
   const deactivatedVehicles = await Vehicle.find({
+    ...req.vehicleQueryFilter,
     isActive: false
   })
     .select('vehicleId currentLocation ownedBy vehicleModel')
@@ -231,6 +236,7 @@ export const getDeactivatedVehicles = asyncHandler(async (req, res) => {
 // GET Available Vehicles (List )
 export const getAvailableVehicles = asyncHandler(async (req, res) => {
   const availableVehicles = await Vehicle.find({
+    ...req.vehicleQueryFilter,
     isActive: true,
     isBlacklisted: false
   })
@@ -287,4 +293,3 @@ export const updateVehicleStatus = asyncHandler(async (req, res) => {
     })
   );
 });
-

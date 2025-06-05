@@ -39,7 +39,8 @@ import {
 } from "@mui/icons-material";
 import AddIcon from "@mui/icons-material/Add";
 import { useDispatch, useSelector } from 'react-redux';
-import { bookingRequestCount, activeBookingCount, cancelledBookingCount, fetchBookingsByType, cancelBooking, deleteBooking, revenueList } from '../../../features/booking/bookingSlice'
+import { bookingRequestCount, activeBookingCount, cancelledBookingCount, fetchBookingsByType, cancelBooking, deleteBooking, revenueList, sendWhatsAppMsg, sendEmail } from '../../../features/booking/bookingSlice'
+import { Snackbar, Alert } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 
 
@@ -114,6 +115,7 @@ const BookingCard = () => {
   const [bookingToDelete, setBookingToDelete] = useState(null);
   const dispatch = useDispatch();
   const { list: bookingList, requestCount, activeDeliveriesCount, cancelledDeliveriesCount, totalRevenue } = useSelector(state => state.bookings);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
 
   useEffect(() => {
     if (bookingList && Array.isArray(bookingList)) {
@@ -141,7 +143,11 @@ const BookingCard = () => {
     if (route) navigate(route);
   };
 
-
+  const handleShare = (bookingId) => {
+    dispatch(sendWhatsAppMsg(bookingId));
+    dispatch(sendEmail(bookingId));
+    setOpenSnackbar(true);
+  }
   const handleRequestSort = (property) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
@@ -466,10 +472,21 @@ const BookingCard = () => {
                               size="small"
                               color="primary"
                               title="share"
+                              onClick={() => handleShare(row.bookingId)}
                             >
                               <SendIcon fontSize="small" />
                             </IconButton>
                           </Box>
+                          <Snackbar
+                            open={openSnackbar}
+                            autoHideDuration={3000}
+                            onClose={() => setOpenSnackbar(false)}
+                            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                          >
+                            <Alert onClose={() => setOpenSnackbar(false)} severity="success" variant="filled" sx={{ width: '100%' }}>
+                              Share link sent via WhatsApp and Email!
+                            </Alert>
+                          </Snackbar>
                         </TableCell>
                       </>
                     )}

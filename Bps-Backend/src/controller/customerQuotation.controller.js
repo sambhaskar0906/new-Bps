@@ -10,14 +10,15 @@ const formatQuotations = (quotations) => {
   return quotations.map((q, index) => ({
     "S.No.": index + 1,
     "Booking ID": q.bookingId,
+    "orderBy": q.createdByRole || 'N/A',
     "Date": q.quotationDate ? q.quotationDate.toISOString().split("T")[0] : "",
     "Name": q.customerId
       ? `${q.customerId.firstName} ${q.customerId.lastName}`
       : `${q.firstName || ""} ${q.lastName || ""}`.trim(),
-    "Pick up": q.startStation?.stationName || q.startStationName || 'N/A',
+    "pickup": q.startStation?.stationName || q.startStationName || 'N/A',
     "": "",
     "Name (Drop)": q.toCustomerName || "",
-    "Drop": q.toCity || "",
+    "drop": q.endStation || "",
     "Contact": q.mobile || "",
     "Action": [
       { name: "View", icon: "view-icon", action: `/api/quotations/${q._id}` },
@@ -37,6 +38,7 @@ const getBookingFilterByType = (type, user) => {
   } else {
     baseFilter = {
       activeDelivery: false,
+      isDelivered: { $ne: true },
       totalCancelled: 0,
       $or: [
         { createdByRole: { $in: ['admin', 'supervisor'] } },
@@ -241,16 +243,12 @@ export const getTotalCancelled = asyncHandler(async (req, res) => {
 export const getTotalRevenue = asyncHandler(async (req, res) => {
   const quotations = await Quotation.find();
 
-  const total = quotations.reduce((sum, q) => {
-    // Use the computedTotalRevenue from the virtual field
-    const computedRevenue = Number(q.computedTotalRevenue) || 0;
+  const totalRevenue = quotations.reduce((sum, q) => sum + (q.amount || 0), 0);
 
-    // Accumulate the computed revenue
-    return sum + computedRevenue;
-  }, 0);
-  console.log("Total Revenue:", total);
-  res.status(200).json(new ApiResponse(200, { totalRevenue: total }));
+  console.log("Total Revenue:", totalRevenue);
+  res.status(200).json(new ApiResponse(200, { totalRevenue }));
 });
+
 
 
 export const searchQuotationByBookingId = asyncHandler(async (req, res, next) => {
@@ -305,38 +303,39 @@ export const getCancelledList = asyncHandler(async (req, res) => {
 // Controller to get revenue details from quotations
 // Controller to get total revenue from quotations
 export const getRevenue = asyncHandler(async (req, res) => {
-  // Fetch all quotations that are NOT cancelled
-  const filter = getBookingFilterByType('request', req.user);
-  const quotations = await Quotation.find(filter)
-    .select('bookingId quotationDate startStationName endStation grandTotal computedTotalRevenue')
+
+  const quotations = await Quotation.find(req.roleQueryFilter)
+    .select('bookingId quotationDate startStationName endStation grandTotal computedTotalRevenue amount sTax')
     .lean();
 
-  // Calculate total revenue using grandTotal or computedTotalRevenue (choose what fits your logic)
-  const total = quotations.reduce((sum, q) => {
-    // Use the computedTotalRevenue from the virtual field
-    const computedRevenue = Number(q.computedTotalRevenue) || 0;
+  // Calculate grandTotal = amount + sTax (use this instead of grandTotal field)
+  const totalRevenue = quotations.reduce(
+    (sum, q) => sum + ((q.amount || 0) + (q.sTax || 0)),
+    0
+  );
 
-    // Accumulate the computed revenue
-    return sum + computedRevenue;
-  }, 0);
-  console.log("Total Revenue:", total);
+  console.log("Total Revenue:", totalRevenue);
 
-  // Prepare data array for detailed response
-  const data = quotations.map((q, index) => ({
-    SNo: index + 1,
-    bookingId: q.bookingId,
-    date: q.quotationDate ? new Date(q.quotationDate).toISOString().slice(0, 10) : 'N/A',
-    pickup: q.startStationName || 'Unknown',
-    drop: q.endStation || 'Unknown',
-    revenue: (Number(q.grandTotal) || Number(q.computedTotalRevenue) || 0).toFixed(2),
-  }));
+  const data = quotations.map((q, index) => {
+    const grandTotal = (q.amount || 0) + (q.sTax || 0);
+    return {
+      SNo: index + 1,
+      bookingId: q.bookingId,
+      date: q.quotationDate ? new Date(q.quotationDate).toISOString().slice(0, 10) : 'N/A',
+      pickup: q.startStationName || 'Unknown',
+      drop: q.endStation || 'Unknown',
+      revenue: grandTotal.toFixed(2),
+    };
+  });
 
   res.status(200).json({
-    totalRevenue: total.toFixed(2),
+    totalRevenue: totalRevenue.toFixed(2),
     count: data.length,
     data,
   });
 });
+
+
 
 
 
@@ -413,7 +412,7 @@ export const sendBookingEmail = async (email, booking) => {
     toCity,
     toPincode,
     productDetails,
-    grandTotal
+    amount
   } = booking;
 
   let productDetailsText = '';
@@ -436,7 +435,7 @@ export const sendBookingEmail = async (email, booking) => {
             <li><strong>Name:</strong> ${product.name}, <strong>Weight:</strong> ${product.weight}, <strong>Quantity:</strong> ${product.quantity}, <strong>Price:</strong> ${product.price}</li>
           `).join('')}
         </ul>
-        <p><strong>Grand Total:</strong> ${grandTotal}</p>
+        <p><strong>Grand Total:</strong> ${amount}</p>
         <p>Thank you for choosing our service.</p>
         <p>Best regards,<br>BharatParcel Team</p>
       `
@@ -449,4 +448,35 @@ export const sendBookingEmail = async (email, booking) => {
   }
 
 
+};
+export const sendBookingEmailById = async (req, res) => {
+  const { bookingId } = req.params;
+
+  try {
+    // Populate the 'customerId' field with email and name
+    const booking = await Quotation.findOne({ bookingId }).populate('customerId', 'emailId firstName lastName');
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    // Check populated customer data
+    const customer = booking.customerId;
+
+    if (!customer?.emailId) {
+      return res.status(400).json({ message: 'Customer email not available' });
+    }
+
+    // Send the email
+    await sendBookingEmail(customer.emailId, {
+      ...booking.toObject(),
+      firstName: customer.firstName,
+      lastName: customer.lastName
+    });
+
+    res.status(200).json({ message: 'Booking confirmation email sent successfully' });
+  } catch (error) {
+    console.error('Error sending booking email by ID:', bookingId, error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 };

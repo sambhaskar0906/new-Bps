@@ -18,7 +18,7 @@ import { fetchBookingsByType } from '../../../features/booking/bookingSlice';
 import { fetchBookingRequest as fetchQuotationRequest } from '../../../features/quotation/quotationSlice';
 import { fetchavailableList } from '../../../features/Driver/driverSlice';
 import { getAvailableVehiclesList } from '../../../features/vehicle/vehicleSlice';
-import { assignDeliveries, finalDeliveryList } from '../../../features/delivery/deliverySlice';
+import { assignDeliveries, finalDeliveryList, finalDeliveryWhatsApp, finalDeliveryMail } from '../../../features/delivery/deliverySlice';
 import SendIcon from '@mui/icons-material/Send';
 
 const DeliveryCard = () => {
@@ -48,7 +48,10 @@ const DeliveryCard = () => {
     const handleCardClick = (type) => {
         setSelectedCard(type);
     };
-
+    const handleSend = (orderId) => {
+        dispatch(finalDeliveryWhatsApp(orderId));
+        dispatch(finalDeliveryMail(orderId));
+    }
     const handleCheckboxChange = (id) => {
         setSelectedItems((prev) => {
             const current = prev[selectedCard] || [];
@@ -279,7 +282,7 @@ const DeliveryCard = () => {
                             <Typography>{item.drop || item.Drop}</Typography>
                             {selectedCard === 'final' && (
                                 <IconButton>
-                                    <SendIcon color='primary' />
+                                    <SendIcon color='primary' onClick={() => handleSend(item.orderId)} />
                                 </IconButton>
                             )}
                         </Box>

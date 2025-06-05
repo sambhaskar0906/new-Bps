@@ -6,11 +6,16 @@ const ledgerHistorySchema = new mongoose.Schema({
   amount: Number,
   paidAmount: Number,
   remainingAmount: Number,
- additionalStatement:
- {
-  type:String
- }
-},{timestamps:true});
+  additionalStatement:
+  {
+    type: String
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+}, { timestamps: true });
 
 const CustomerLedgerHistory = mongoose.model("CustomerLedgerHistory", ledgerHistorySchema);
 export default CustomerLedgerHistory;

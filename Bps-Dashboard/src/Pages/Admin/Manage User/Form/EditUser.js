@@ -20,7 +20,7 @@ const EditUser = () => {
     const [form, setForm] = useState({
         firstName: '', middleName: '', lastName: '',
         contactNumber: '', email: '',
-        address: '', state: '', startStation: '', city: '', distnict: '', pincode: '',
+        address: '', state: '', startStation: '', city: '', district: '', pincode: '',
         idProof: '', idPhoto: '', adminPhoto: ''
     });
 
@@ -52,7 +52,7 @@ const EditUser = () => {
                 address: userData.address || '',
                 state: userData.state || '',
                 city: userData.city || '',
-                district: userData.district || '',
+                district: userData.distinct || '',
                 pincode: userData.pincode || '',
                 idProof: userData.idProof || '',
                 idPhoto: userData.idPhoto || '',
@@ -123,7 +123,7 @@ const EditUser = () => {
             .unwrap()
             .then(() => {
                 alert('Admin updated successfully!');
-                navigate('/user');
+                navigate('/users');
             })
             .catch(err => alert(`Error: ${err}`));
     };

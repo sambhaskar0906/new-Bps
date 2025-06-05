@@ -143,8 +143,53 @@ export const cancelBooking = createAsyncThunk(
     }
   }
 )
+export const sendWhatsAppMsg = createAsyncThunk(
+  'sendMsg/sendWhatsApp', async (bookingId, thunkApi) => {
+    try {
+      const res = await axios.post(`http://localhost:8000/api/whatsapp/send-booking/${bookingId}`);
+      return res.data;
+    }
+    catch (err) {
+      return thunkApi.rejectWithValue(err.response?.data?.message);
+    }
+  }
+)
+export const sendEmail = createAsyncThunk(
+  'sendEmail/booking', async (bookingId, thunkApi) => {
+    try {
+      const res = await axios.post(`${BASE_URL}/send-booking-email/${bookingId}`)
+      return res.data;
+    }
+    catch (err) {
+      return thunkApi.rejectWithValue(err.response?.data?.message);
+    }
+  }
+)
+export const pendingList = createAsyncThunk(
+  'thirdParty/booking', async (_, thunkApi) => {
+    try {
+      const res = await axios.get(`${BASE_URL}/pending`);
+      return res.data.bookings;
+    }
+    catch (err) {
+      return thunkApi.rejectWithValue(err.response?.data?.message);
+    }
+  }
+)
+export const approveList = createAsyncThunk(
+  'aproveThirdParty/booking', async (bookingId, thunkApi) => {
+    try {
+      const res = await axios.patch(`${BASE_URL}/${bookingId}/approve`);
+      return res.data.booking
+    }
+    catch (err) {
+      return thunkApi.rejectWithValue(err.response?.data?.message);
+    }
+  }
+)
 const initialState = {
   list: [],
+  list2: [],
   requestCount: 0,
   activeDeliveriesCount: 0,
   cancelledDeliveriesCount: 0,
@@ -317,6 +362,54 @@ const bookingSlice = createSlice({
         state.list = action.payload
       })
       .addCase(cancelBooking.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload
+      })
+      .addCase(sendWhatsAppMsg.pending, (state) => {
+        state.loading = true;
+        state.error = null
+      })
+      .addCase(sendWhatsAppMsg.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null
+      })
+      .addCase(sendWhatsAppMsg.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(sendEmail.pending, (state) => {
+        state.loading = true;
+        state.error = null
+      })
+      .addCase(sendEmail.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null
+      })
+      .addCase(sendEmail.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(pendingList.pending, (state) => {
+        state.loading = true;
+        state.error = null
+      })
+      .addCase(pendingList.fulfilled, (state, action) => {
+        state.loading = false;
+        state.list2 = action.payload
+      })
+      .addCase(pendingList.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(approveList.pending, (state) => {
+        state.loading = true;
+        state.error = null
+      })
+      .addCase(approveList.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null
+      })
+      .addCase(approveList.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload
       })

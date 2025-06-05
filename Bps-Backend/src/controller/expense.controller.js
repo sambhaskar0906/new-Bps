@@ -5,33 +5,33 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import fs from "fs/promises";
 const formatDate = (date) => {
-    const d = new Date(date);
-    return d.toISOString().split("T")[0]; 
-  };
+  const d = new Date(date);
+  return d.toISOString().split("T")[0];
+};
 
 export const createExpense = asyncHandler(async (req, res) => {
-  const { title, date, invoiceNo, details, amount, taxAmount, totalAmount} = req.body;
+  const { title, date, invoiceNo, details, amount, taxAmount, totalAmount } = req.body;
 
- 
+
   if ([title, date, invoiceNo, details, amount, taxAmount, totalAmount].some(field => !field || field.trim() === "")) {
     throw new ApiError(400, "All fields are required");
   }
   const document = req.files?.document?.[0]?.path || null;
-  
+
   const existingExpense = await Expense.findOne({ invoiceNo });
   if (existingExpense) {
     throw new ApiError(409, "Expense with this invoice number already exists");
   }
 
-  
-  const expense = await Expense.create({ title, date, invoiceNo, details, amount, taxAmount, totalAmount ,document});
+
+  const expense = await Expense.create({ title, date, invoiceNo, details, amount, taxAmount, totalAmount, document, createdBy: req.user._id, });
 
   return res.status(201).json(new ApiResponse(201, "Expense created successfully", expense));
 });
 
 
 export const getAllExpenses = asyncHandler(async (req, res) => {
-  const expenses = await Expense.find().sort({ createdAt: -1 });
+  const expenses = await Expense.find(req.roleQueryFilter).sort({ createdAt: -1 });
 
   const expenseList = expenses.map((expense, index) => ({
     sNo: index + 1,
@@ -39,7 +39,7 @@ export const getAllExpenses = asyncHandler(async (req, res) => {
     date: formatDate(expense.date),
     name: expense.title,
     taxableAmount: expense.amount,
-    receiving:expense.document,
+    receiving: expense.document,
     total: expense.totalAmount,
 
     action: [
@@ -63,10 +63,10 @@ export const getExpenseByNo = asyncHandler(async (req, res) => {
 
 
 export const updateExpenseByNo = asyncHandler(async (req, res) => {
-  console.log("Req files",req.files);
+  console.log("Req files", req.files);
   const document = req.files?.document?.[0]?.path || null;
 
-  
+
   if (document) {
     req.body.document = document;
   }
